@@ -1,9 +1,7 @@
-S3CP: Commands-line tools for Amazon S3 fiel manipulation
+S3CP: Commands-line tools for Amazon S3 file manipulation
 =============================================================
 
-Just a few simple command-line utilities to list, copy, view S3 files.
-
-e.g.  s3cp, s3ls, s3cat
+Just a few simple command-line utilities to list, copy, view S3 files, e.g.,  s3cp, s3ls, s3cat
 
 ### Building ###
 
