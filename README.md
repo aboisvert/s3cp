@@ -1,7 +1,7 @@
 S3CP: Commands-line tools for Amazon S3 file manipulation
 =============================================================
 
-Just a few simple command-line utilities to list, copy, view S3 files, e.g.,  s3cp, s3ls, s3cat
+Just a few simple command-line utilities to list, copy, view S3 files, e.g.,  `s3cp`, `s3ls`, `s3cat`.
 
 ### Building ###
 
@@ -17,13 +17,15 @@ Just a few simple command-line utilities to list, copy, view S3 files, e.g.,  s3
     s3cat s3://mybucket/path/to/some/file.txt
     s3cp local_file.bin s3://mybucket/some/path
 
-Use -h option to learn about command-line options.
+Use `-h` option to learn about command-line options.
+
+Note:  All commands support both `s3://bucket/path/to/file` and the legacy `bucket:path/to/file` syntax.
 
 ### Dependencies ###
 
-* highline >= 1.5.1  (console/terminal size guessing)
-* right_aws = 2.1.0  (underlying Amazon S3 API)
-* right_http_connection = 1.30 (required by right_aws)
+* highline `>=1.5.1`  (console/terminal size guessing)
+* right_aws `=2.1.0`  (underlying Amazon S3 API)
+* right_http_connection `=1.30` (required by `right_aws`)
 
 ### Target platform ###
 
