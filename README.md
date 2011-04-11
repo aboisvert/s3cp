@@ -17,9 +17,11 @@ Just a few simple command-line utilities to list, copy, view S3 files, e.g.,  `s
     s3cat s3://mybucket/path/to/some/file.txt
     s3cp local_file.bin s3://mybucket/some/path
 
-Use `-h` option to learn about command-line options.
+Use the `-h` option to learn about command-line options.
 
-Note:  All commands support both `s3://bucket/path/to/file` and the legacy `bucket:path/to/file` syntax.
+All commands support both `s3://bucket/path/to/file` and the legacy `bucket:path/to/file` syntax.
+
+Commands are also TTY-aware;  when run in an interactive shell, their behavior will change.  For example, `s3cat` will launch your favorite `PAGER` or `less` (the default pager) whereas `s3ls` will display N items at a time, where N is the number of display lines on your terminal and pause between pages.
 
 ### Dependencies ###
 
