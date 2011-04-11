@@ -7,8 +7,6 @@ e.g.  s3cp, s3ls, s3cat
 
 ### Building ###
 
-You need Apache Buildr 1.4.x or higher.
-
     # rake gem
     # gem install s3cp-0.1.0.gem
 
