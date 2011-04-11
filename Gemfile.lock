@@ -23,7 +23,6 @@ GEM
     rspec-expectations (2.5.0)
       diff-lcs (~> 1.1.2)
     rspec-mocks (2.5.0)
-    s3sync (1.2.5)
 
 PLATFORMS
   ruby
@@ -32,4 +31,3 @@ DEPENDENCIES
   rake (= 0.8.7)
   rspec (= 2.5.0)
   s3cp!
-  s3sync (= 1.2.5)

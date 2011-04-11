@@ -21,7 +21,6 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency("rspec", ["= 2.5.0"])
   s.add_development_dependency("rake", ["= 0.8.7"])
-  s.add_development_dependency("s3sync", ["= 1.2.5"])
 
   s.files        = Dir.glob("lib/**/*") +
                    %w{History.txt Manifest.txt README.md} +
