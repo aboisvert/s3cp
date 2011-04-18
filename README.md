@@ -27,7 +27,7 @@ Commands are also TTY-aware;  when run in an interactive shell, their behavior w
 
 * highline `>=1.5.1`  (console/terminal size guessing)
 * right_aws `=2.1.0`  (underlying Amazon S3 API)
-* right_http_connection `=1.30` (required by `right_aws`)
+* right_http_connection `=1.3.0` (required by `right_aws`)
 
 ### Target platform ###
 
