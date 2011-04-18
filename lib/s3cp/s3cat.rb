@@ -47,30 +47,22 @@ fail "Your URL looks funny, doesn't it?" unless @bucket
 
 @s3 = S3CP.connect().interface
 
-# if TTY, store contents to file
 if options[:tty]
+  # store contents to file to display with PAGER
   file = Tempfile.new('s3cat')
   out = File.new(file.path, File::CREAT|File::RDWR)
-else
-  out = STDOUT
-end
-
-# write contents to file or STDOUT
-begin
-  @s3.get(@bucket, @prefix) do |chunk|
-    if file
+  begin
+    @s3.get(@bucket, @prefix) do |chunk|
       out.write(chunk)
-    else
-      STDOUT.print(chunk)
     end
+  ensure
+    out.close()
   end
-ensure
-  out.close() if file
-end
-
-# if TTY, use PAGER to display the file
-if file
   exec "#{ENV['PAGER'] || 'less'} #{file.path}"
   file.delete()
+else
+  @s3.get(@bucket, @prefix) do |chunk|
+    STDOUT.print(chunk)
+  end
 end
 
