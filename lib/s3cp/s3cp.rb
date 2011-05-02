@@ -1,4 +1,5 @@
 require 'rubygems'
+require 'extensions/kernel' if RUBY_VERSION =~ /1.8/
 require 'right_aws'
 require 'optparse'
 require 'date'
@@ -130,6 +131,9 @@ def copy(from, to, options)
         dest = File.expand_path(to) + '/' + relative(key_from, key)
         dest = File.join(dest, File.basename(key)) if File.directory?(dest)
         puts "Copy s3://#{bucket_from}/#{key} to #{dest}"
+        dir = File.dirname(dest)
+        FileUtils.mkdir_p dir unless File.exist? dir
+        fail "Destination path is not a directory: #{dir}" unless File.directory?(dir)
         f = File.new(dest, File::CREAT|File::RDWR)
         begin
           @s3.interface.get(bucket_from, key) do |chunk|
