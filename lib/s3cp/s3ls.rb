@@ -1,4 +1,5 @@
 require 'rubygems'
+require 'extensions/kernel' if RUBY_VERSION =~ /1.8/
 require 'right_aws'
 require 'optparse'
 require 'date'
