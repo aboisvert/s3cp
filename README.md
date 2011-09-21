@@ -16,6 +16,7 @@ Just a few simple command-line utilities to list, copy, view S3 files, e.g.,  `s
     s3ls s3://mybucket/path/to/some/files
     s3cat s3://mybucket/path/to/some/file.txt
     s3cp local_file.bin s3://mybucket/some/path
+    s3mod s3://mybucket/path/to/some/file.txt public-read
 
 Use the `-h` option to learn about command-line options.
 
