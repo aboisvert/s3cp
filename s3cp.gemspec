@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency("rake", ["= 0.8.7"])
 
   s.files        = Dir.glob("lib/**/*") +
-                   %w{History.txt Manifest.txt README.md} +
+                   %w{History.txt README.md} +
                    Dir.glob("bin/*")
 
   s.executables << 's3ls'
