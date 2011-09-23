@@ -64,7 +64,7 @@ end
 rows = 0
 @s3.interface.incrementally_list_bucket(@bucket, :prefix => @key) do |page|
   page[:contents].each do |entry|
-    key = entry[:key]
+    key = "s3://#{@bucket}/#{entry[:key]}"
     last_modified = DateTime.parse(entry[:last_modified])
     if options[:long_format]
       puts "#{last_modified.strftime(options[:date_format])} #{key}"
