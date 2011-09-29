@@ -20,22 +20,22 @@ op = OptionParser.new do |opts|
       2. Copy from S3 to local machine
       3. Copy from S3 to S3
       4. Copy from local machine to another path on local machine (for completeness)
-    
+
     Local to S3:
       s3cp LOCAL_PATH S3_PATH
-      
+
     S3 to Local:
       s3cp S3_PATH LOCAL_PATH
-      
+
     S3 to S3:
       s3cp S3_PATH S3_PATH2
-      
+
     Local to Local:
       s3cp LOCAL_PATH LOCAL_PATH2
-      
+
   BANNER
   opts.separator ''
-  
+
   opts.on("-h", '--headers \'Header1: Header1Value\',\'Header2: Header2Value\'', Array, "Headers to set on the item in S3.  This can include http headers like \'Content-Type: image/jpg\' or AMZ headers like: \'x-amz-acl: public-read\'" ) do |h|
     options[:headers] = h
   end
@@ -115,7 +115,7 @@ def headers_array_to_hash(header_array)
   header_array.each do |header|
     header_parts = header.split(": ", 2)
     if header_parts.size == 2
-      headers[header_parts[0]] = header_parts[1] 
+      headers[header_parts[0].downcase] = header_parts[1]  # RightAWS gem expect lowercase header names :(
     else
       log("Header ignored because of error splitting [#{header}].  Expected colon delimiter; e.g. Header: Value")
     end
@@ -132,7 +132,7 @@ def with_headers(msg)
   msg
 end
 
-def s3_to_s3(bucket_from, key, bucket_to, dest)  
+def s3_to_s3(bucket_from, key, bucket_to, dest)
   log(with_headers("Copy s3://#{bucket_from}/#{key} to s3://#{bucket_to}/#{dest}"))
   if @headers.empty?
     @s3.interface.copy(bucket_from, key, bucket_to, dest)

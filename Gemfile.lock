@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    s3cp (0.1.1)
+    s3cp (0.1.2)
       extensions (~> 0.6)
       highline (~> 1.5.1)
       right_aws (~> 2.1.0)

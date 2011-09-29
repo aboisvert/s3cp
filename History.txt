@@ -1,13 +1,18 @@
-=== 0.1.3 / (Pending)
+=== 0.1.4 / (Pending)
+
+=== 0.1.3 / 2011-09-29
+
+* Fixed:  s3cp --headers names are now converted to lowercase since underlying
+          RightAWS gem expects lowercase header names.
 
 === 0.1.2 / 2011-09-29
 
-* s3cp now supports passing --headers (Donnie Flood)
-* s3ls now displays entries with s3://@bucket/ prefix
+* Added:   s3cp now supports passing --headers (Donnie Flood)
+* Changed: s3ls now displays entries with s3://@bucket/ prefix
 
 === 0.1.1 / 2011-09-22
 
-* Added s3mod command (Josh Carver)
+* Added:  s3mod command (Josh Carver)
 
 === 0.1 / 2011-04-05
 
