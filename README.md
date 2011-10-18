@@ -24,6 +24,83 @@ All commands support both `s3://bucket/path/to/file` and the legacy `bucket:path
 
 Commands are also TTY-aware;  when run in an interactive shell, their behavior will change.  For example, `s3cat` will launch your favorite `PAGER` or `less` (the default pager) whereas `s3ls` will display N items at a time, where N is the number of display lines on your terminal and pause between pages.
 
+### Usage ###
+
+    $ s3cp
+    s3cp supports 4 copying use cases:
+      1. Copy from local machine to S3
+      2. Copy from S3 to local machine
+      3. Copy from S3 to S3
+      4. Copy from local machine to another path on local machine (for completeness)
+
+    Local to S3:
+      s3cp LOCAL_PATH S3_PATH
+
+    S3 to Local:
+      s3cp S3_PATH LOCAL_PATH
+
+    S3 to S3:
+      s3cp S3_PATH S3_PATH2
+
+    Local to Local:
+      s3cp LOCAL_PATH LOCAL_PATH2
+
+
+        --headers 'Header1: Header1Value','Header2: Header2Value'
+                                     Headers to set on the item in S3.  This can include http headers like 'Content-Type: image/jpg' or AMZ headers like: 'x-amz-acl: public-read'
+    -r                               Recursive mode
+        --verbose                    Verbose mode
+        --debug                      Debug mode
+    -h, --help                       Show this message
+
+.
+
+    $ s3ls
+    s3ls [path]
+
+    -l                               Long listing format
+        --date-format FORMAT         Date format (see http://strfti.me/)
+        --verbose                    Verbose mode
+        --rows ROWS                  Rows per page
+    -h, --help                       Show this message
+
+.
+
+    $ s3cat
+    s3cat [path]
+
+        --debug                      Debug mode
+        --tty                        TTY mode
+    -h, --help                       Show this message
+
+.
+
+    $ s3mod
+    s3mod [path] [permission]
+
+    where [permission] is one of:
+
+     * private
+     * authenticated-read
+     * public-read
+     * public-read-write
+
+    -h, --help                       Show this message
+
+.
+
+    $ ./_s3rm
+    s3rm [path]
+
+    -r, --recursive                  Delete S3 keys matching provided prefix.
+    -i, --include REGEX              Delete only S3 objects matching the following regular expression.
+    -x, --exclude REGEX              Do not delete any S3 objects matching provided regular expression.
+    -F, --fail-if-not-exist          Fail if no S3 object match provided key, prefix and/or regex
+    -t, --test                       Only display matching keys; do not actually delete anything.
+        --silent                     Do not display keys as they are deleted.
+        --verbose                    Verbose mode
+    -h, --help                       Show this message
+
 ### Dependencies ###
 
 * highline `>=1.5.1`  (console/terminal size guessing)
