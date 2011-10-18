@@ -36,7 +36,7 @@ op = OptionParser.new do |opts|
   BANNER
   opts.separator ''
 
-  opts.on("-h", '--headers \'Header1: Header1Value\',\'Header2: Header2Value\'', Array, "Headers to set on the item in S3.  This can include http headers like \'Content-Type: image/jpg\' or AMZ headers like: \'x-amz-acl: public-read\'" ) do |h|
+  opts.on('--headers \'Header1: Header1Value\',\'Header2: Header2Value\'', Array, "Headers to set on the item in S3.  This can include http headers like \'Content-Type: image/jpg\' or AMZ headers like: \'x-amz-acl: public-read\'" ) do |h|
     options[:headers] = h
   end
 
