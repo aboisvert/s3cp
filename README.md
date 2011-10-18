@@ -58,7 +58,7 @@ Commands are also TTY-aware;  when run in an interactive shell, their behavior w
         --debug                      Debug mode
     -h, --help                       Show this message
 
-.
+---
 
     $ s3ls
     s3ls [path]
@@ -69,7 +69,7 @@ Commands are also TTY-aware;  when run in an interactive shell, their behavior w
         --rows ROWS                  Rows per page
     -h, --help                       Show this message
 
-.
+---
 
     $ s3cat
     s3cat [path]
@@ -78,7 +78,7 @@ Commands are also TTY-aware;  when run in an interactive shell, their behavior w
         --tty                        TTY mode
     -h, --help                       Show this message
 
-.
+---
 
     $ s3mod
     s3mod [path] [permission]
@@ -92,9 +92,9 @@ Commands are also TTY-aware;  when run in an interactive shell, their behavior w
 
     -h, --help                       Show this message
 
-.
+---
 
-    $ ./_s3rm
+    $ s3rm
     s3rm [path]
 
     -r, --recursive                  Delete S3 keys matching provided prefix.
