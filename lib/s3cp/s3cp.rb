@@ -36,13 +36,20 @@ op = OptionParser.new do |opts|
   BANNER
   opts.separator ''
 
-  opts.on('--headers \'Header1: Header1Value\',\'Header2: Header2Value\'', Array, "Headers to set on the item in S3.  This can include http headers like \'Content-Type: image/jpg\' or AMZ headers like: \'x-amz-acl: public-read\'" ) do |h|
+  opts.on("-r", "--recursive", "Recursive mode") do
+    options[:recursive] = true
+  end
+
+  opts.separator ""
+
+  opts.on('--headers \'Header1: Header1Value\',\'Header2: Header2Value\'', Array, "Headers to set on the item in S3." ) do |h|
     options[:headers] = h
   end
 
-  opts.on("-r", "Recursive mode") do
-    options[:recursive] = true
-  end
+  opts.separator "        e.g.,"
+  opts.separator "              HTTP headers: \'Content-Type: image/jpg\'"
+  opts.separator "               AMZ headers: \'x-amz-acl: public-read\'"
+  opts.separator ""
 
   opts.on("--verbose", "Verbose mode") do
     options[:verbose] = true

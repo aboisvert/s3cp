@@ -46,9 +46,14 @@ Commands are also TTY-aware;  when run in an interactive shell, their behavior w
       s3cp LOCAL_PATH LOCAL_PATH2
 
 
+    -r, --recursive                  Recursive mode
+
         --headers 'Header1: Header1Value','Header2: Header2Value'
-                                     Headers to set on the item in S3.  This can include http headers like 'Content-Type: image/jpg' or AMZ headers like: 'x-amz-acl: public-read'
-    -r                               Recursive mode
+                                     Headers to set on the item in S3.
+        e.g.,
+              HTTP headers: 'Content-Type: image/jpg'
+               AMZ headers: 'x-amz-acl: public-read'
+
         --verbose                    Verbose mode
         --debug                      Debug mode
     -h, --help                       Show this message
