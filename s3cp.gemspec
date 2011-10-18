@@ -31,6 +31,7 @@ Gem::Specification.new do |s|
   s.executables << 's3cp'
   s.executables << 's3cat'
   s.executables << 's3mod'
+  s.executables << 's3rm'
 
   s.extra_rdoc_files = ['README.md', 'History.txt']
 
