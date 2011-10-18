@@ -3,10 +3,22 @@ S3CP: Commands-line tools for Amazon S3 file manipulation
 
 Just a few simple command-line utilities to list, copy, view S3 files, e.g.,  `s3cp`, `s3ls`, `s3cat`.
 
+### Installing ###
+
+Make sure you have Rubygems installed on your system then run:
+
+    # gem install s3cp
+
 ### Building ###
 
-    # rake gem
-    # gem install s3cp-0.1.0.gem
+If you want to hack on s3cp and build the gem yourself, you will need Bundler (http://gembundler.com/) installed.  Here is a typical development setup:
+
+    # git clone git@github.com:aboisvert/s3cp.git
+    # cd s3cp
+    (... hack on s3cp ...)
+    # bundle install
+    # bundle exec rake gem
+    # gem install s3cp-*.gem
 
 ### Examples ###
 
