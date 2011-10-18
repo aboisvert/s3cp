@@ -15,7 +15,7 @@ options[:headers] = []
 
 op = OptionParser.new do |opts|
   opts.banner = <<-BANNER
-    s3cp supports 4 coyping use cases:
+    s3cp supports 4 copying use cases:
       1. Copy from local machine to S3
       2. Copy from S3 to local machine
       3. Copy from S3 to S3
