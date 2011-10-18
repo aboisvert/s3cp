@@ -1,4 +1,8 @@
-=== 0.1.5 / (Pending)
+=== 0.1.6 / (Pending)
+
+=== 0.1.5 / 2011-10-17
+
+* Fixed:  All commands now work properly on Ruby 1.8.x
 
 === 0.1.4 / 2011-10-17
 
