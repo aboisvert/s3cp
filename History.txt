@@ -1,4 +1,10 @@
-=== 0.1.6 / (Pending)
+=== 0.1.7 / (Pending)
+
+=== 0.1.6 / (2011-12-16)
+
+* Changed: s3rm now uses multi-object delete operation for faster deletes
+* Changed: dependency on 'aboisvert-aws' instead of 'right-aws' until
+           it supports multi-object delete.
 
 === 0.1.5 / 2011-10-17
 

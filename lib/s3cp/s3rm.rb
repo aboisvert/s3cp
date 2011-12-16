@@ -91,7 +91,7 @@ exclude_regex = options[:exclude_regex] ? Regexp.new(options[:exclude_regex]) : 
 @s3 = S3CP.connect()
 
 if options[:recursive]
-  total_matching = 0
+  matching_keys = []
 
   @s3.interface.incrementally_list_bucket(@bucket, :prefix => @key) do |page|
     page[:contents].each do |entry|
@@ -104,15 +104,25 @@ if options[:recursive]
       puts "#{key} => #{matching}" if options[:verbose]
 
       if matching
-        total_matching += 1
+        matching_keys << entry[:key]
         puts key unless options[:silent] || options[:verbose]
-        @s3.interface.delete(@bucket, entry[:key]) unless options[:test]
       end
     end
   end
 
-  if options[:fail_if_not_exist] && total_matching == 0
+  if options[:fail_if_not_exist] && matching_keys.length == 0
     puts "No matching keys."
+    exit(1)
+  end
+
+  errors = []
+  errors = @s3.interface.delete_multiple(@bucket, matching_keys) unless options[:test]
+
+  if errors.length > 0
+    puts "Errors during deletion:"
+    errors.each do |error|
+      puts "#{error[:key]} #{error[:code]} #{error[:message]}"
+    end
     exit(1)
   end
 else
