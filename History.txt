@@ -1,4 +1,9 @@
-=== 0.1.8 / (Pending)
+=== 0.1.9 / (Pending)
+
+=== 0.1.8 / (2011-12-29)
+
+* Fixed:  Apparently, File.new(path, File::CREAT|File::WRONLY) does not
+          truncate existing files; use File.new(path, "wb") instead.
 
 === 0.1.7 / (2011-12-29)
 

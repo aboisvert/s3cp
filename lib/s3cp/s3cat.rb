@@ -51,7 +51,7 @@ fail "Your URL looks funny, doesn't it?" unless @bucket
 if options[:tty]
   # store contents to file to display with PAGER
   file = Tempfile.new('s3cat')
-  out = File.new(file.path, File::CREAT|File::O_WRONLY)
+  out = File.new(file.path, "wb")
   begin
     @s3.get(@bucket, @prefix) do |chunk|
       out.write(chunk)

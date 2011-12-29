@@ -160,7 +160,7 @@ end
 
 def s3_to_local(bucket_from, key_from, dest)
   log("Copy s3://#{bucket_from}/#{key_from} to #{dest}")
-  f = File.new(dest, File::CREAT|File::O_WRONLY)
+  f = File.new(dest, "wb")
   begin
     @s3.interface.get(bucket_from, key_from) do |chunk|
       f.write(chunk)
