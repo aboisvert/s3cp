@@ -1,4 +1,9 @@
-=== 0.1.7 / (Pending)
+=== 0.1.8 / (Pending)
+
+=== 0.1.7 / (2011-12-29)
+
+* Fixed:  s3cp would not truncate existing files when overwriting, possibly
+          resulting in corrupted files.
 
 === 0.1.6 / (2011-12-16)
 
