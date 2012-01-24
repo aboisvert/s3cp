@@ -1,4 +1,10 @@
-=== 0.2.0 / (Pending)
+=== 0.1.11 / (Pending)
+
+=== 0.1.10 / (2012-01-24)
+
+* Fixed: --max-keys now works correctly with --delimiter
+* Fixed: do not display any keys if there are no common-prefix
+         delimiter-matching keys
 
 === 0.1.9 / (2012-01-23)
 
