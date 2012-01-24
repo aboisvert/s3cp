@@ -32,6 +32,14 @@ op = OptionParser.new do |opts|
     options[:rows_per_page] = rows.to_i
   end
 
+  opts.on("--max-keys KEYS", "Maximum number of keys to display") do |keys|
+    options[:max_keys] = keys.to_i
+  end
+
+  opts.on("--delimiter CHAR", "Display keys starting with given path prefix and up to delimiter character") do |delimiter|
+    options[:delimiter] = delimiter
+  end
+
   opts.on_tail("-h", "--help", "Show this message") do
     puts op
     exit
@@ -62,11 +70,22 @@ end
 @s3 = S3CP.connect()
 
 rows = 0
-@s3.interface.incrementally_list_bucket(@bucket, :prefix => @key) do |page|
-  page[:contents].each do |entry|
-    key = "s3://#{@bucket}/#{entry[:key]}"
-    last_modified = DateTime.parse(entry[:last_modified])
+
+s3_options = Hash.new
+s3_options[:prefix] = @key
+s3_options["max-keys"] = options[:max_keys] if options[:max_keys]
+s3_options[:delimiter] = options[:delimiter] if options[:delimiter]
+
+@s3.interface.incrementally_list_bucket(@bucket, s3_options) do |page|
+  entries = page[:contents]
+  if options[:delimiter]
+    entries = page[:common_prefixes]
+    entries << page[:contents][0][:key] if page[:contents].length > 0
+  end
+  entries.each do |entry|
+    key = "s3://#{@bucket}/#{options[:delimiter] ? entry : entry[:key]}"
     if options[:long_format]
+      last_modified = DateTime.parse(entry[:last_modified])
       puts "#{last_modified.strftime(options[:date_format])} #{key}"
     else
       puts key
