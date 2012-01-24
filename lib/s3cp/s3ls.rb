@@ -69,18 +69,19 @@ end
 
 @s3 = S3CP.connect()
 
+keys = 0
 rows = 0
 
 s3_options = Hash.new
 s3_options[:prefix] = @key
-s3_options["max-keys"] = options[:max_keys] if options[:max_keys]
+s3_options["max-keys"] = options[:max_keys] if options[:max_keys] && !options[:delimiter]
 s3_options[:delimiter] = options[:delimiter] if options[:delimiter]
 
 @s3.interface.incrementally_list_bucket(@bucket, s3_options) do |page|
   entries = page[:contents]
   if options[:delimiter]
     entries = page[:common_prefixes]
-    entries << page[:contents][0][:key] if page[:contents].length > 0
+    entries << page[:contents][0][:key] if page[:contents].length > 0 && entries.length > 0
   end
   entries.each do |entry|
     key = "s3://#{@bucket}/#{options[:delimiter] ? entry : entry[:key]}"
@@ -91,6 +92,10 @@ s3_options[:delimiter] = options[:delimiter] if options[:delimiter]
       puts key
     end
     rows += 1
+    keys += 1
+    if options[:max_keys] && keys >= options[:max_keys]
+      exit
+    end
     if options[:rows_per_page] && (rows % options[:rows_per_page] == 0)
       begin
         print "Continue? (Y/n) "
