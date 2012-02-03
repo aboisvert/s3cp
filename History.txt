@@ -1,5 +1,9 @@
 === 0.1.12 / (Pending)
 
+=== 0.1.12 / (2012-02-03)
+
+* Re-released 0.1.11 due to misfire.
+
 === 0.1.11 / (2012-02-03)
 
 * Added:  s3cp --no-overwrite option to prevent overwriting existing files.
