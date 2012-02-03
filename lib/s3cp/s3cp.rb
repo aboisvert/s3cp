@@ -12,6 +12,7 @@ require 's3cp/utils'
 options = {}
 options[:verbose] = $stdout.isatty ? true : false
 options[:headers] = []
+options[:overwrite] = true
 
 op = OptionParser.new do |opts|
   opts.banner = <<-BANNER
@@ -38,6 +39,10 @@ op = OptionParser.new do |opts|
 
   opts.on("-r", "--recursive", "Recursive mode") do
     options[:recursive] = true
+  end
+
+  opts.on("--no-overwrite", "Does not overwrite existing files") do
+    options[:overwrite] = false
   end
 
   opts.separator ""
@@ -170,6 +175,12 @@ def s3_to_local(bucket_from, key_from, dest)
   end
 end
 
+def s3_exist?(bucket, key)
+  metadata = @s3.interface.head(bucket, key)
+  puts "exist? #{bucket} #{key} => #{metadata != nil}"
+  (metadata != nil)
+end
+
 def copy(from, to, options)
   bucket_from, key_from = S3CP.bucket_and_key(from)
   bucket_to, key_to = S3CP.bucket_and_key(to)
@@ -187,10 +198,10 @@ def copy(from, to, options)
       end
       keys.each do |key|
         dest = no_slash(key_to) + '/' + relative(key_from, key)
-        s3_to_s3(bucket_from, key, bucket_to, dest)
+        s3_to_s3(bucket_from, key, bucket_to, dest) unless !options[:overwrite] && s3_exist?(bucket_to, dest)
       end
     else
-      s3_to_s3(bucket_from, key_from, bucket_to, key_to)
+      s3_to_s3(bucket_from, key_from, bucket_to, key_to) unless !options[:overwrite] && s3_exist?(bucket_to, key_to)
     end
   when :local_to_s3
     if options[:recursive]
@@ -198,10 +209,10 @@ def copy(from, to, options)
       files.each do |f|
         f = File.expand_path(f)
         key = no_slash(key_to) + '/' + relative(from, f)
-        local_to_s3(bucket_to, key, f)
+        local_to_s3(bucket_to, key, f) unless !options[:overwrite] && s3_exist?(bucket_to, key)
       end
     else
-      local_to_s3(bucket_to, key_to, File.expand_path(from))
+      local_to_s3(bucket_to, key_to, File.expand_path(from)) unless !options[:overwrite] && s3_exist?(bucket_to, key_to)
     end
   when :s3_to_local
     if options[:recursive]
@@ -215,12 +226,12 @@ def copy(from, to, options)
         dir = File.dirname(dest)
         FileUtils.mkdir_p dir unless File.exist? dir
         fail "Destination path is not a directory: #{dir}" unless File.directory?(dir)
-        s3_to_local(bucket_from, key, dest)
+        s3_to_local(bucket_from, key, dest) unless !options[:overwrite] && File.exist?(dest)
       end
     else
       dest = File.expand_path(to)
       dest = File.join(dest, File.basename(key_from)) if File.directory?(dest)
-      s3_to_local(bucket_from, key_from, dest)
+      s3_to_local(bucket_from, key_from, dest) unless !options[:overwrite] && File.exist?(dest)
     end
   when :local_to_local
     if options[:recursive]
