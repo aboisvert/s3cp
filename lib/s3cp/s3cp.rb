@@ -177,7 +177,7 @@ end
 
 def s3_exist?(bucket, key)
   metadata = @s3.interface.head(bucket, key)
-  puts "exist? #{bucket} #{key} => #{metadata != nil}"
+  #puts "exist? #{bucket} #{key} => #{metadata != nil}"
   (metadata != nil)
 end
 
