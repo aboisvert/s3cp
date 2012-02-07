@@ -87,7 +87,8 @@ s3_options[:delimiter] = options[:delimiter] if options[:delimiter]
     key = "s3://#{@bucket}/#{options[:delimiter] ? entry : entry[:key]}"
     if options[:long_format]
       last_modified = DateTime.parse(entry[:last_modified])
-      puts "#{last_modified.strftime(options[:date_format])} #{key}"
+      size = entry[:size]
+      puts "#{last_modified.strftime(options[:date_format])} #{ "%12d" % size} #{key}"
     else
       puts key
     end

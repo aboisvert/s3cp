@@ -1,5 +1,9 @@
 === 0.1.12 / (Pending)
 
+=== 0.1.13 / (2012-02-06)
+
+* Long-listing (-l) now displays file size (in bytes).
+
 === 0.1.12 / (2012-02-03)
 
 * Re-released 0.1.11 due to misfire.
