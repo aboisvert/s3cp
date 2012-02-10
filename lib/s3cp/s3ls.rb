@@ -20,8 +20,8 @@ op = OptionParser.new do |opts|
     options[:long_format] = true
   end
 
-  opts.on("--date-format FORMAT", "Date format (see http://strfti.me/)") do |custom|
-    options[:custom_params] = custom
+  opts.on("--date-format FORMAT", "Date format (see http://strfti.me/)") do |format|
+    options[:date_format] = format
   end
 
   opts.on("--verbose", "Verbose mode") do

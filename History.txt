@@ -1,5 +1,7 @@
 === 0.1.14 / (Pending)
 
+* Fixed:  --date-format argument didn't work correctly
+
 === 0.1.13 / (2012-02-06)
 
 * Long-listing (-l) now displays file size (in bytes).
