@@ -1,4 +1,12 @@
-=== 0.1.15 / (Pending)
+=== 0.1.16 / (Pending)
+
+=== 0.1.15 / (2012-02-17)
+
+* Added: s3cp now automatically checks MD5 checksums during download/upload
+         and retries up to 5 times by default if the checksum fails.
+         The number of attempts may be configured using --max-attempts,
+         the retry delay may be changed with --retry-delay and the check
+         may be disabled completely using --no-checksum.
 
 === 0.1.14 / (2012-02-09)
 

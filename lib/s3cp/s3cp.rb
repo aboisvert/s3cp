@@ -5,6 +5,7 @@ require 'optparse'
 require 'date'
 require 'highline/import'
 require 'fileutils'
+require 'digest'
 
 require 's3cp/utils'
 
@@ -13,6 +14,9 @@ options = {}
 options[:verbose] = $stdout.isatty ? true : false
 options[:headers] = []
 options[:overwrite] = true
+options[:checksum] = true
+options[:retries] = 5
+options[:retry_delay] = 1
 
 op = OptionParser.new do |opts|
   opts.banner = <<-BANNER
@@ -43,6 +47,18 @@ op = OptionParser.new do |opts|
 
   opts.on("--no-overwrite", "Does not overwrite existing files") do
     options[:overwrite] = false
+  end
+
+  opts.on("--max-attempts N", "Number of attempts to upload/download until checksum matches (default #{options[:retries]})") do |attempts|
+    options[:max_attempts] = attempts.to_i
+  end
+
+  opts.on("--retry-delay SECONDS", "Time to wait (in seconds) between retries (default #{options[:retry_delay]})") do |delay|
+    options[:retry_delay] = delay.to_i
+  end
+
+  opts.on("--no-checksum", "Disable checksum checking") do
+    options[:checksum] = false
   end
 
   opts.separator ""
@@ -144,6 +160,19 @@ def with_headers(msg)
   msg
 end
 
+def md5(filename)
+  digest = Digest::MD5.new()
+  file = File.open(filename, 'r')
+  begin
+    file.each_line do |line|
+      digest << line
+    end
+  ensure
+    file.close()
+  end
+  digest.hexdigest
+end
+
 def s3_to_s3(bucket_from, key, bucket_to, dest)
   log(with_headers("Copy s3://#{bucket_from}/#{key} to s3://#{bucket_to}/#{dest}"))
   if @headers.empty?
@@ -153,26 +182,65 @@ def s3_to_s3(bucket_from, key, bucket_to, dest)
   end
 end
 
-def local_to_s3(bucket_to, key, file)
+def local_to_s3(bucket_to, key, file, options = {})
   log(with_headers("Copy #{file} to s3://#{bucket_to}/#{key}"))
-  f = File.open(file)
-  begin
-    @s3.interface.put(bucket_to, key, f, @headers)
-  ensure
-    f.close()
+  if options[:checksum]
+    expected_md5 = md5(file)
   end
+  retries = 0
+  begin
+    if retries == options[:max_attempts]
+      fail "Unable to upload to s3://#{bucket_from}/#{key_from} after #{retries} attempts."
+    end
+    sleep options[:retry_delay] if retries > 0
+
+    f = File.open(file)
+    begin
+      meta = @s3.interface.put(bucket_to, key, f, @headers)
+
+      if options[:checksum]
+        metadata = @s3.interface.head(bucket_to, key)
+        actual_md5 = metadata["etag"] or fail "Unable to get etag/md5 for #{bucket_to}:#{key}"
+        actual_md5 = actual_md5.sub(/^"/, "").sub(/"$/, "") # strip beginning and trailing quotes
+      end
+    rescue => e
+      raise e unless options[:checksum]
+      STDERR.puts e
+    ensure
+      f.close()
+    end
+    retries += 1
+  end until options[:checksum] == false || expected_md5 == actual_md5
 end
 
-def s3_to_local(bucket_from, key_from, dest)
+def s3_to_local(bucket_from, key_from, dest, options = {})
   log("Copy s3://#{bucket_from}/#{key_from} to #{dest}")
-  f = File.new(dest, "wb")
+  retries = 0
   begin
-    @s3.interface.get(bucket_from, key_from) do |chunk|
-      f.write(chunk)
+    if retries == options[:max_attempts]
+      File.delete(dest) if File.exist?(dest)
+      fail "Unable to download s3://#{bucket_from}/#{key_from} after #{retries} attempts."
     end
-  ensure
-    f.close()
-  end
+    sleep options[:retry_delay] if retries > 0
+
+    f = File.new(dest, "wb")
+    begin
+      if options[:checksum]
+        metadata = @s3.interface.head(bucket_from, key_from)
+        expected_md5 = metadata["etag"] or fail "Unable to get etag/md5 for #{bucket_from}:#{key_from}"
+        expected_md5 = expected_md5.sub(/^"/, "").sub(/"$/, "") # strip beginning and trailing quotes
+      end
+      @s3.interface.get(bucket_from, key_from) do |chunk|
+        f.write(chunk)
+      end
+    rescue => e
+      raise e unless options[:checksum]
+      STDERR.puts e
+    ensure
+      f.close()
+    end
+    retries += 1
+  end until options[:checksum] == false || md5(dest) == expected_md5
 end
 
 def s3_exist?(bucket, key)
@@ -209,10 +277,10 @@ def copy(from, to, options)
       files.each do |f|
         f = File.expand_path(f)
         key = no_slash(key_to) + '/' + relative(from, f)
-        local_to_s3(bucket_to, key, f) unless !options[:overwrite] && s3_exist?(bucket_to, key)
+        local_to_s3(bucket_to, key, f, options) unless !options[:overwrite] && s3_exist?(bucket_to, key)
       end
     else
-      local_to_s3(bucket_to, key_to, File.expand_path(from)) unless !options[:overwrite] && s3_exist?(bucket_to, key_to)
+      local_to_s3(bucket_to, key_to, File.expand_path(from), options) unless !options[:overwrite] && s3_exist?(bucket_to, key_to)
     end
   when :s3_to_local
     if options[:recursive]
@@ -226,12 +294,12 @@ def copy(from, to, options)
         dir = File.dirname(dest)
         FileUtils.mkdir_p dir unless File.exist? dir
         fail "Destination path is not a directory: #{dir}" unless File.directory?(dir)
-        s3_to_local(bucket_from, key, dest) unless !options[:overwrite] && File.exist?(dest)
+        s3_to_local(bucket_from, key, dest, options) unless !options[:overwrite] && File.exist?(dest)
       end
     else
       dest = File.expand_path(to)
       dest = File.join(dest, File.basename(key_from)) if File.directory?(dest)
-      s3_to_local(bucket_from, key_from, dest) unless !options[:overwrite] && File.exist?(dest)
+      s3_to_local(bucket_from, key_from, dest, options) unless !options[:overwrite] && File.exist?(dest)
     end
   when :local_to_local
     if options[:recursive]
