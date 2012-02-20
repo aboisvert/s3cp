@@ -3,6 +3,8 @@
 * Added: s3stat command to display S3 object properties
 * Added: s3dir as a shortcut for "s3ls --delimiter / ..."
          (default to character in S3CP_DELIMITER environment variable or "/" if not defined)
+* Added: s3cp defaults can now be set using environment variables
+         S3CP_OVERWRITE, S3CP_CHECKSUM, S3CP_RETRIES, S3CP_RETRY_DELAY
 
 === 0.1.15 / (2012-02-17)
 
