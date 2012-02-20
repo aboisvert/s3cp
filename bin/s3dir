@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+ARGV.unshift "--delimiter", ENV["S3CP_DELIMITER"] || "/"
+require 's3cp/s3ls'
+
