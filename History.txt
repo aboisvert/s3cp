@@ -1,5 +1,7 @@
 === 0.1.16 / (Pending)
 
+* Added: s3stat command to display S3 object properties
+
 === 0.1.15 / (2012-02-17)
 
 * Added: s3cp now automatically checks MD5 checksums during download/upload
