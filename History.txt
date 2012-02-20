@@ -5,6 +5,8 @@
          (default to character in S3CP_DELIMITER environment variable or "/" if not defined)
 * Added: s3cp defaults can now be set using environment variables
          S3CP_OVERWRITE, S3CP_CHECKSUM, S3CP_RETRIES, S3CP_RETRY_DELAY
+* Fixed: Skip checksum verification for S3 objects with invalid MD5's
+         (details @ https://forums.aws.amazon.com/message.jspa?messageID=234538)
 
 === 0.1.15 / (2012-02-17)
 

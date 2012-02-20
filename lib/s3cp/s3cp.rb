@@ -50,7 +50,7 @@ op = OptionParser.new do |opts|
   end
 
   opts.on("--max-attempts N", "Number of attempts to upload/download until checksum matches (default #{options[:retries]})") do |attempts|
-    options[:max_attempts] = attempts.to_i
+    options[:retries] = attempts.to_i
   end
 
   opts.on("--retry-delay SECONDS", "Time to wait (in seconds) between retries (default #{options[:retry_delay]})") do |delay|
@@ -189,10 +189,13 @@ def local_to_s3(bucket_to, key, file, options = {})
   end
   retries = 0
   begin
-    if retries == options[:max_attempts]
-      fail "Unable to upload to s3://#{bucket_from}/#{key_from} after #{retries} attempts."
+    if retries == options[:retries]
+      fail "Unable to upload to s3://#{bucket_to}/#{key} after #{retries} attempts."
     end
-    sleep options[:retry_delay] if retries > 0
+    if retries > 0
+      STDERR.puts "Warning: failed checksum for s3://#{bucket_to}/#{bucket_to}. Retrying #{options[:retries] - retries} more time(s)."
+      sleep options[:retry_delay]
+    end
 
     f = File.open(file)
     begin
@@ -202,6 +205,10 @@ def local_to_s3(bucket_to, key, file, options = {})
         metadata = @s3.interface.head(bucket_to, key)
         actual_md5 = metadata["etag"] or fail "Unable to get etag/md5 for #{bucket_to}:#{key}"
         actual_md5 = actual_md5.sub(/^"/, "").sub(/"$/, "") # strip beginning and trailing quotes
+        if actual_md5 =~ /-/
+          STDERR.puts "Warning: invalid MD5 checksum in metadata; skipped checksum verification."
+          actual_md5 = nil
+        end
       end
     rescue => e
       raise e unless options[:checksum]
@@ -210,18 +217,21 @@ def local_to_s3(bucket_to, key, file, options = {})
       f.close()
     end
     retries += 1
-  end until options[:checksum] == false || expected_md5 == actual_md5
+    end until options[:checksum] == false || actual_md5.nil? || expected_md5 == actual_md5
 end
 
 def s3_to_local(bucket_from, key_from, dest, options = {})
   log("Copy s3://#{bucket_from}/#{key_from} to #{dest}")
   retries = 0
   begin
-    if retries == options[:max_attempts]
+    if retries == options[:retries]
       File.delete(dest) if File.exist?(dest)
       fail "Unable to download s3://#{bucket_from}/#{key_from} after #{retries} attempts."
     end
-    sleep options[:retry_delay] if retries > 0
+    if retries > 0
+      STDERR.puts "Warning: failed checksum for s3://#{bucket_from}/#{key_from}. Retrying #{options[:retries] - retries} more time(s)."
+      sleep options[:retry_delay]
+    end
 
     f = File.new(dest, "wb")
     begin
@@ -229,6 +239,10 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
         metadata = @s3.interface.head(bucket_from, key_from)
         expected_md5 = metadata["etag"] or fail "Unable to get etag/md5 for #{bucket_from}:#{key_from}"
         expected_md5 = expected_md5.sub(/^"/, "").sub(/"$/, "") # strip beginning and trailing quotes
+        if expected_md5 =~ /-/
+          STDERR.puts "Warning: invalid MD5 checksum in metadata; skipped checksum verification."
+          expected_md5 = nil
+        end
       end
       @s3.interface.get(bucket_from, key_from) do |chunk|
         f.write(chunk)
@@ -240,7 +254,7 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
       f.close()
     end
     retries += 1
-  end until options[:checksum] == false || md5(dest) == expected_md5
+  end until options[:checksum] == false || expected_md5.nil? || md5(dest) == expected_md5
 end
 
 def s3_exist?(bucket, key)
