@@ -78,14 +78,18 @@ s3_options["max-keys"] = options[:max_keys] if options[:max_keys] && !options[:d
 s3_options[:delimiter] = options[:delimiter] if options[:delimiter]
 
 @s3.interface.incrementally_list_bucket(@bucket, s3_options) do |page|
-  entries = page[:contents]
+  entries = []
   if options[:delimiter]
-    entries = page[:common_prefixes]
-    entries << page[:contents][0][:key] if page[:contents].length > 0 && entries.length > 0
+    entries << { :key => page[:contents][0][:key] } if page[:contents].length > 0 && entries.length > 0
+    page[:common_prefixes].each do |entry|
+      entries << { :key => entry }
+    end
+    entries << { :key => nil }
   end
+  entries += page[:contents]
   entries.each do |entry|
-    key = "s3://#{@bucket}/#{options[:delimiter] ? entry : entry[:key]}"
-    if options[:long_format]
+    key = entry[:key] ? "s3://#{@bucket}/#{entry[:key]}" : "---"
+    if options[:long_format] && entry[:last_modified] && entry[:size]
       last_modified = DateTime.parse(entry[:last_modified])
       size = entry[:size]
       puts "#{last_modified.strftime(options[:date_format])} #{ "%12d" % size} #{key}"
