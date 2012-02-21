@@ -38,6 +38,8 @@ debug "url #{url}"
 delimiter = ENV["S3CP_DELIMITER"] || "/"
 debug "delimiter #{delimiter}"
 
+excludes = (ENV["S3CP_EXCLUDES"] || "_$folder$").split(",")
+
 bucket, prefix = S3CP.bucket_and_key(url)
 if bucket == "s3"
   bucket = ""
@@ -56,6 +58,7 @@ debug "recursive #{recursive}"
 debug "dirs_only #{@dirs_only}"
 
 def print_keys(bucket, keys)
+  keys << keys[0] + " " if keys.size == 1 && @dirs_only
   keys.each do |key|
     if @legacy_format
       debug key
@@ -103,6 +106,10 @@ if (prefix && prefix.length > 0) || (url =~ /s3\:\/\/[^\/]+\//) || (url =~ /\:$/
     result = []
   end
 
+  excludes.each do |exclude|
+    result.reject! { |key| key.match(Regexp.escape(exclude)) }
+  end
+
   debug "result1 #{result.inspect}"
 
   # there may be longer matches
@@ -131,6 +138,10 @@ if (prefix && prefix.length > 0) || (url =~ /s3\:\/\/[^\/]+\//) || (url =~ /\:$/
     end
     result = @dirs_only ? short_keys.keys.sort : all_keys
     debug "result2 #{result.inspect}"
+  end
+
+  excludes.each do |exclude|
+    result.reject! { |key| key.match(Regexp.escape(exclude)) }
   end
 
   debug "final #{result.inspect}"
