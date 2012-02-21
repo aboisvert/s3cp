@@ -1,7 +1,7 @@
 S3CP: Commands-line tools for Amazon S3 file manipulation
 =============================================================
 
-Just a few simple command-line utilities to list, copy, view S3 files, e.g.,  `s3cp`, `s3ls`, `s3cat`.
+Just a few simple command-line utilities to list, copy, view S3 files, e.g.,  `s3cp`, `s3ls`, `s3cat`, `s3rm`, etc.
 
 ### Installing ###
 
@@ -26,9 +26,11 @@ If you want to hack on s3cp and build the gem yourself, you will need Bundler (h
     export AWS_SECRET_ACCESS_KEY=...
 
     s3ls s3://mybucket/path/to/some/files
+    s3dir s3://mybucket/path/to/some/files
     s3cat s3://mybucket/path/to/some/file.txt
     s3cp local_file.bin s3://mybucket/some/path
     s3mod s3://mybucket/path/to/some/file.txt public-read
+    s3stat s3://mybucket/path/to/some/file.txt
 
 Use the `-h` option to learn about command-line options.
 
