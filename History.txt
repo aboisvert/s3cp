@@ -1,12 +1,21 @@
-=== 0.1.16 / (Pending)
+=== 0.2.1 / (Pending)
+
+=== 0.2.0 / (2012-02-20)
 
 * Added: s3stat command to display S3 object properties
 * Added: s3dir as a shortcut for "s3ls --delimiter / ..."
          (default to character in S3CP_DELIMITER environment variable or "/" if not defined)
 * Added: s3cp defaults can now be set using environment variables
          S3CP_OVERWRITE, S3CP_CHECKSUM, S3CP_RETRIES, S3CP_RETRY_DELAY
+* Added: Support for Bash command-line completion of S3 URLs (see below).
 * Fixed: Skip checksum verification for S3 objects with invalid MD5's
          (details @ https://forums.aws.amazon.com/message.jspa?messageID=234538)
+
+To install Bash completion for S3 URLs, add the following to ~/.bashrc:
+
+  for cmd in [ s3cat s3cp s3dir s3ls s3mod s3rm s3stat ]; do
+    complete -C s3cp_complete $cmd
+  done
 
 === 0.1.15 / (2012-02-17)
 
