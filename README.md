@@ -36,6 +36,14 @@ All commands support both `s3://bucket/path/to/file` and the legacy `bucket:path
 
 Commands are also TTY-aware;  when run in an interactive shell, their behavior will change.  For example, `s3cat` will launch your favorite `PAGER` or `less` (the default pager) whereas `s3ls` will display N items at a time, where N is the number of display lines on your terminal and pause between pages.
 
+### Bash completion for S3 URLs ###
+
+To install Bash completion for S3 URLs, add the following to ~/.bashrc:
+
+    for cmd in [ s3cat s3cp s3dir s3ls s3mod s3rm s3stat ]; do
+      complete -C s3cp_complete $cmd
+    done
+
 ### Usage ###
 
     $ s3cp
