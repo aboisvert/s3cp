@@ -1,4 +1,8 @@
-=== 0.2.2 / (Pending)
+=== 0.2.3 / (Pending)
+
+=== 0.2.2 / (2012-02-23)
+
+* Added: Progress bars during upload/download if $stdout.isatty
 
 * Fixed: s3cat now handles broken pipes properly
          e.g. "s3cat bucket:some/file | head" will now terminate early.

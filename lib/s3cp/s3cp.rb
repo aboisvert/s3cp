@@ -23,6 +23,7 @@ require 'date'
 require 'highline/import'
 require 'fileutils'
 require 'digest'
+require 'progressbar'
 
 require 's3cp/utils'
 
@@ -111,6 +112,21 @@ end
 
 destination = ARGV.last
 sources = ARGV[0..-2]
+
+class Proxy
+  instance_methods.each { |m| undef_method m unless m =~ /(^__|^send$|^object_id$)/ }
+
+  def initialize(target)
+    @target = target
+  end
+
+  protected
+
+  def method_missing(name, *args, &block)
+    #puts "method_missing! #{name} #{args.inspect}"
+    @target.send(name, *args, &block)
+  end
+end
 
 def s3?(url)
   S3CP.bucket_and_key(url)[0]
@@ -216,7 +232,31 @@ def local_to_s3(bucket_to, key, file, options = {})
 
     f = File.open(file)
     begin
+      if $stdout.isatty
+        f = Proxy.new(f)
+        progress_bar = ProgressBar.new(File.basename(file), File.size(file)).tap do |p|
+          p.file_transfer_mode
+        end
+        class << f
+         attr_accessor :progress_bar
+          def read(length, buffer=nil)
+            begin
+              result = @target.read(length, buffer)
+              @progress_bar.inc result.length if result
+              result
+            rescue => e
+              puts e
+              raise e
+            end
+          end
+        end
+        f.progress_bar = progress_bar
+      else
+        progress_bar = nil
+      end
+
       meta = @s3.interface.put(bucket_to, key, f, @headers)
+      progress_bar.finish if progress_bar
 
       if options[:checksum]
         metadata = @s3.interface.head(bucket_to, key)
@@ -252,6 +292,7 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
 
     f = File.new(dest, "wb")
     begin
+      size = nil
       if options[:checksum]
         metadata = @s3.interface.head(bucket_from, key_from)
         expected_md5 = metadata["etag"] or fail "Unable to get etag/md5 for #{bucket_from}:#{key_from}"
@@ -260,9 +301,25 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
           STDERR.puts "Warning: invalid MD5 checksum in metadata; skipped checksum verification."
           expected_md5 = nil
         end
+        size = metadata["content-length"].to_i
+      elsif $stdout.isatty
+        metadata = @s3.interface.head(bucket_from, key_from)
+        size = metadata["content-length"].to_i
       end
-      @s3.interface.get(bucket_from, key_from) do |chunk|
-        f.write(chunk)
+      begin
+        progress_bar = if size
+          ProgressBar.new(File.basename(key_from), size).tap do |p|
+            p.file_transfer_mode
+          end
+        end
+        @s3.interface.get(bucket_from, key_from) do |chunk|
+          f.write(chunk)
+          progress_bar.inc chunk.size if progress_bar
+        end
+        progress_bar.finish
+      rescue => e
+        progress_bar.halt if progress_bar
+        raise e
       end
     rescue => e
       raise e unless options[:checksum]

@@ -22,6 +22,7 @@ require 'optparse'
 require 'date'
 require 'highline/import'
 require 'tempfile'
+require 'progressbar'
 
 require 's3cp/utils'
 
@@ -67,12 +68,21 @@ fail "Your URL looks funny, doesn't it?" unless @bucket
 
 if options[:tty]
   # store contents to file to display with PAGER
+  metadata = @s3.head(@bucket, @prefix)
+  size = metadata["content-length"].to_i
+
+  progress_bar = ProgressBar.new(File.basename(@prefix), size).tap do |p|
+    p.file_transfer_mode
+  end
+
   file = Tempfile.new('s3cat')
   out = File.new(file.path, "wb")
   begin
     @s3.get(@bucket, @prefix) do |chunk|
       out.write(chunk)
+      progress_bar.inc chunk.size
     end
+    progress_bar.finish
   ensure
     out.close()
   end
