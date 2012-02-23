@@ -1,5 +1,8 @@
 === 0.2.2 / (Pending)
 
+* Fixed: s3cat now handles broken pipes properly
+         e.g. "s3cat bucket:some/file | head" will now terminate early.
+
 === 0.2.1 / (2012-02-20)
 
 * Added: Bash completion now supports exclusions through S3CP_EXCLUDES
