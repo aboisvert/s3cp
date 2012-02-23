@@ -80,7 +80,11 @@ if options[:tty]
   file.delete()
 else
   @s3.get(@bucket, @prefix) do |chunk|
-    STDOUT.print(chunk)
+    begin
+      STDOUT.print(chunk)
+    rescue Errno::EPIPE
+      break
+    end
   end
 end
 
