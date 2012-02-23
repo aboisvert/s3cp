@@ -31,7 +31,7 @@ position = ENV['COMP_POINT'].to_i
 url = begin
   start = position
   start -= 1 while start >= 1 && cmd_line[start-1].chr != ' '
-  cmd_line[start..position-1]
+  cmd_line[start..position-1].gsub("\"", "")
 end
 
 cmd = ARGV[0]
@@ -51,6 +51,9 @@ def debug(str)
 end
 
 debug "url #{url}"
+
+debug "arg1 #{arg1.inspect}"
+debug "arg2 #{arg2.inspect}"
 
 delimiter = ENV["S3CP_DELIMITER"] || "/"
 debug "delimiter #{delimiter}"
