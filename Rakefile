@@ -25,6 +25,7 @@ task :tag do
   puts "Tagging #{tag}..."
   sh "git tag -a #{tag} -m 'Tagging #{tag}'"
   puts "Pushing to tags to remote..."
+  sh "git push origin master"
   sh "git push --tags"
 end
 
