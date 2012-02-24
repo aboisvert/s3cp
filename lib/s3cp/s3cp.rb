@@ -35,6 +35,9 @@ options[:overwrite]   = ENV["S3CP_RETRIES"]     ? (ENV["S3CP_OVERWRITE"] =~ /y|y
 options[:checksum]    = ENV["S3CP_CHECKSUM"]    ? (ENV["S3CP_CHECKSUM"]  =~ /y|yes|true|1|^\s*$/i ? true : false) : true
 options[:retries]     = ENV["S3CP_RETRIES"]     ? ENV["S3CP_RETRIES"].to_i     : 5
 options[:retry_delay] = ENV["S3CP_RETRY_DELAY"] ? ENV["S3CP_RETRY_DELAY"].to_i : 1
+options[:include_regex] = []
+options[:exclude_regex] = []
+options[:sync] = false
 
 op = OptionParser.new do |opts|
   opts.banner = <<-BANNER
@@ -67,6 +70,10 @@ op = OptionParser.new do |opts|
     options[:overwrite] = false
   end
 
+  opts.on("--sync", "Sync mode: use checksum to determine if files need copying.") do
+    options[:sync] = true
+  end
+
   opts.on("--max-attempts N", "Number of attempts to upload/download until checksum matches (default #{options[:retries]})") do |attempts|
     options[:retries] = attempts.to_i
   end
@@ -90,6 +97,14 @@ op = OptionParser.new do |opts|
   opts.separator "               AMZ headers: \'x-amz-acl: public-read\'"
   opts.separator ""
 
+  opts.on("-i REGEX", "--include REGEX", "Copy only files matching the following regular expression.") do |regex|
+    options[:include_regex] << regex
+  end
+
+  opts.on("-x REGEX", "--exclude REGEX", "Do not copy files matching provided regular expression.") do |regex|
+    options[:exclude_regex] << regex
+  end
+
   opts.on("--verbose", "Verbose mode") do
     options[:verbose] = true
   end
@@ -108,6 +123,16 @@ op.parse!(ARGV)
 if ARGV.size < 2
   puts op
   exit
+end
+
+if options[:include_regex].any? && !options[:recursive]
+  puts "-i (--include regex) option requires -r (recursive) option."
+  exit(1)
+end
+
+if options[:exclude_regex].any? && !options[:recursive]
+  puts "-x (--exclude regex) option requires -r (recursive) option."
+  exit(1)
 end
 
 destination = ARGV.last
@@ -143,6 +168,16 @@ end
 
 @bucket = $1
 @prefix = $2
+
+@includes = options[:include_regex].map { |s| Regexp.new(s) }
+@excludes = options[:exclude_regex].map { |s| Regexp.new(s) }
+
+def match(path)
+  matching = true
+  return false if @includes.any? && !@includes.any? { |regex| regex.match(path) }
+  return false if @excludes.any? &&  @excludes.any? { |regex| regex.match(path) }
+  true
+end
 
 @s3 = S3CP.connect()
 
@@ -217,68 +252,86 @@ end
 
 def local_to_s3(bucket_to, key, file, options = {})
   log(with_headers("Copy #{file} to s3://#{bucket_to}/#{key}"))
-  if options[:checksum]
-    expected_md5 = md5(file)
-  end
-  retries = 0
-  begin
-    if retries == options[:retries]
-      fail "Unable to upload to s3://#{bucket_to}/#{key} after #{retries} attempts."
-    end
-    if retries > 0
-      STDERR.puts "Warning: failed checksum for s3://#{bucket_to}/#{bucket_to}. Retrying #{options[:retries] - retries} more time(s)."
-      sleep options[:retry_delay]
-    end
 
-    f = File.open(file)
+  expected_md5 = if options[:checksum] || options[:sync]
+     md5(file)
+  end
+
+  actual_md5 = if options[:sync]
+    md5 = s3_checksum(bucket_to, key)
+    case md5
+    when :not_found
+      nil
+    when :invalid
+      STDERR.puts "Warning: invalid MD5 checksum in metadata; file will be force-copied."
+      nil
+    else
+      md5
+    end
+  end
+
+  if actual_md5.nil? || (options[:sync] && expected_md5 != actual_md5)
+    retries = 0
     begin
-      if $stdout.isatty
-        f = Proxy.new(f)
-        progress_bar = ProgressBar.new(File.basename(file), File.size(file)).tap do |p|
-          p.file_transfer_mode
-        end
-        class << f
-         attr_accessor :progress_bar
-          def read(length, buffer=nil)
-            begin
-              result = @target.read(length, buffer)
-              @progress_bar.inc result.length if result
-              result
-            rescue => e
-              puts e
-              raise e
+      if retries == options[:retries]
+        fail "Unable to upload to s3://#{bucket_to}/#{key} after #{retries} attempts."
+      end
+      if retries > 0
+        STDERR.puts "Warning: failed checksum for s3://#{bucket_to}/#{bucket_to}. Retrying #{options[:retries] - retries} more time(s)."
+        sleep options[:retry_delay]
+      end
+
+      f = File.open(file)
+      begin
+        if $stdout.isatty
+          f = Proxy.new(f)
+          progress_bar = ProgressBar.new(File.basename(file), File.size(file)).tap do |p|
+            p.file_transfer_mode
+          end
+          class << f
+           attr_accessor :progress_bar
+            def read(length, buffer=nil)
+              begin
+                result = @target.read(length, buffer)
+                @progress_bar.inc result.length if result
+                result
+              rescue => e
+                puts e
+                raise e
+              end
             end
           end
+          f.progress_bar = progress_bar
+        else
+          progress_bar = nil
         end
-        f.progress_bar = progress_bar
-      else
-        progress_bar = nil
-      end
 
-      meta = @s3.interface.put(bucket_to, key, f, @headers)
-      progress_bar.finish if progress_bar
+        meta = @s3.interface.put(bucket_to, key, f, @headers)
+        progress_bar.finish if progress_bar
 
-      if options[:checksum]
-        metadata = @s3.interface.head(bucket_to, key)
-        actual_md5 = metadata["etag"] or fail "Unable to get etag/md5 for #{bucket_to}:#{key}"
-        actual_md5 = actual_md5.sub(/^"/, "").sub(/"$/, "") # strip beginning and trailing quotes
-        if actual_md5 =~ /-/
-          STDERR.puts "Warning: invalid MD5 checksum in metadata; skipped checksum verification."
-          actual_md5 = nil
+        if options[:checksum]
+          actual_md5 = s3_checksum(bucket_to, key)
+          unless actual_md5.is_a? String
+            STDERR.puts "Warning: invalid MD5 checksum in metadata; skipped checksum verification."
+            actual_md5 = nil
+          end
         end
+      rescue => e
+        raise e unless options[:checksum]
+        STDERR.puts e
+      ensure
+        f.close()
       end
-    rescue => e
-      raise e unless options[:checksum]
-      STDERR.puts e
-    ensure
-      f.close()
-    end
-    retries += 1
+      retries += 1
     end until options[:checksum] == false || actual_md5.nil? || expected_md5 == actual_md5
+  else
+    log "Already synchronized."
+  end
 end
 
 def s3_to_local(bucket_from, key_from, dest, options = {})
   log("Copy s3://#{bucket_from}/#{key_from} to #{dest}")
+
   retries = 0
   begin
     if retries == options[:retries]
@@ -289,43 +342,51 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
       STDERR.puts "Warning: failed checksum for s3://#{bucket_from}/#{key_from}. Retrying #{options[:retries] - retries} more time(s)."
       sleep options[:retry_delay]
     end
-
-    f = File.new(dest, "wb")
     begin
-      size = nil
-      if options[:checksum]
-        metadata = @s3.interface.head(bucket_from, key_from)
-        expected_md5 = metadata["etag"] or fail "Unable to get etag/md5 for #{bucket_from}:#{key_from}"
-        expected_md5 = expected_md5.sub(/^"/, "").sub(/"$/, "") # strip beginning and trailing quotes
-        if expected_md5 =~ /-/
+      expected_md5 = if options[:checksum] || options[:sync]
+        md5 = s3_checksum(bucket_from, key_from)
+        if options[:sync] && !md5.is_a?(String)
+          STDERR.puts "Warning: invalid MD5 checksum in metadata; file will be force-copied."
+          nil
+        elsif !md5.is_a? String
           STDERR.puts "Warning: invalid MD5 checksum in metadata; skipped checksum verification."
-          expected_md5 = nil
+          nil
+        else
+          md5
         end
-        size = metadata["content-length"].to_i
-      elsif $stdout.isatty
-        metadata = @s3.interface.head(bucket_from, key_from)
-        size = metadata["content-length"].to_i
       end
-      begin
-        progress_bar = if size
-          ProgressBar.new(File.basename(key_from), size).tap do |p|
-            p.file_transfer_mode
+
+      actual_md5 = if options[:sync] && File.exist?(dest)
+         md5(dest)
+      end
+
+      if !options[:sync] || (expected_md5 != actual_md5)
+        f = File.new(dest, "wb")
+        begin
+          progress_bar = if $stdout.isatty
+            size = s3_size(bucket_from, key_from)
+            ProgressBar.new(File.basename(key_from), size).tap do |p|
+              p.file_transfer_mode
+            end
           end
+          @s3.interface.get(bucket_from, key_from) do |chunk|
+            f.write(chunk)
+            progress_bar.inc chunk.size if progress_bar
+          end
+          progress_bar.finish
+        rescue => e
+          progress_bar.halt if progress_bar
+          raise e
+        ensure
+          f.close()
         end
-        @s3.interface.get(bucket_from, key_from) do |chunk|
-          f.write(chunk)
-          progress_bar.inc chunk.size if progress_bar
-        end
-        progress_bar.finish
-      rescue => e
-        progress_bar.halt if progress_bar
-        raise e
+      else
+        log("Already synchronized")
+        return
       end
     rescue => e
       raise e unless options[:checksum]
       STDERR.puts e
-    ensure
-      f.close()
     end
     retries += 1
   end until options[:checksum] == false || expected_md5.nil? || md5(dest) == expected_md5
@@ -337,13 +398,32 @@ def s3_exist?(bucket, key)
   (metadata != nil)
 end
 
+def s3_checksum(bucket, key)
+  begin
+    metadata = @s3.interface.head(bucket, key)
+    return :not_found unless metadata
+  rescue => e
+    return :not_found if e.is_a?(RightAws::AwsError) && e.http_code == "404"
+    raise e
+  end
+
+  md5 = metadata["etag"] or fail "Unable to get etag/md5 for #{bucket_to}:#{key}"
+  return :invalid unless md5
+
+  md5 = md5.sub(/^"/, "").sub(/"$/, "") # strip beginning and trailing quotes
+  return :invalid if md5 =~ /-/
+
+  md5
+end
+
+def s3_size(bucket, key)
+  metadata = @s3.interface.head(bucket, key)
+  metadata["content-length"].to_i
+end
+
 def copy(from, to, options)
   bucket_from, key_from = S3CP.bucket_and_key(from)
   bucket_to, key_to = S3CP.bucket_and_key(to)
-
-  #puts "bucket_from #{bucket_from.inspect} key_from #{key_from.inspect}"
-  #puts "bucket_to #{bucket_to.inspect} key_from #{key_to.inspect}"
-  #puts "direction #{direction(from, to)}"
 
   case direction(from, to)
   when :s3_to_s3
@@ -353,8 +433,10 @@ def copy(from, to, options)
         page[:contents].each { |entry| keys << entry[:key] }
       end
       keys.each do |key|
-        dest = no_slash(key_to) + '/' + relative(key_from, key)
-        s3_to_s3(bucket_from, key, bucket_to, dest) unless !options[:overwrite] && s3_exist?(bucket_to, dest)
+        if match(key)
+          dest = no_slash(key_to) + '/' + relative(key_from, key)
+          s3_to_s3(bucket_from, key, bucket_to, dest) unless !options[:overwrite] && s3_exist?(bucket_to, dest)
+        end
       end
     else
       s3_to_s3(bucket_from, key_from, bucket_to, key_to) unless !options[:overwrite] && s3_exist?(bucket_to, key_to)
@@ -363,9 +445,10 @@ def copy(from, to, options)
     if options[:recursive]
       files = Dir[from + "/**/*"]
       files.each do |f|
-        f = File.expand_path(f)
-        key = no_slash(key_to) + '/' + relative(from, f)
-        local_to_s3(bucket_to, key, f, options) unless !options[:overwrite] && s3_exist?(bucket_to, key)
+        if File.file?(f) && match(f)
+          key = no_slash(key_to) + '/' + relative(from, f)
+          local_to_s3(bucket_to, key, File.expand_path(f), options) unless !options[:overwrite] && s3_exist?(bucket_to, key)
+        end
       end
     else
       local_to_s3(bucket_to, key_to, File.expand_path(from), options) unless !options[:overwrite] && s3_exist?(bucket_to, key_to)
@@ -377,12 +460,14 @@ def copy(from, to, options)
         page[:contents].each { |entry| keys << entry[:key] }
       end
       keys.each do |key|
-        dest = File.expand_path(to) + '/' + relative(key_from, key)
-        dest = File.join(dest, File.basename(key)) if File.directory?(dest)
-        dir = File.dirname(dest)
-        FileUtils.mkdir_p dir unless File.exist? dir
-        fail "Destination path is not a directory: #{dir}" unless File.directory?(dir)
-        s3_to_local(bucket_from, key, dest, options) unless !options[:overwrite] && File.exist?(dest)
+        if match(key)
+          dest = File.expand_path(to) + '/' + relative(key_from, key)
+          dest = File.join(dest, File.basename(key)) if File.directory?(dest)
+          dir = File.dirname(dest)
+          FileUtils.mkdir_p dir unless File.exist? dir
+          fail "Destination path is not a directory: #{dir}" unless File.directory?(dir)
+          s3_to_local(bucket_from, key, dest, options) unless !options[:overwrite] && File.exist?(dest)
+        end
       end
     else
       dest = File.expand_path(to)
@@ -390,6 +475,9 @@ def copy(from, to, options)
       s3_to_local(bucket_from, key_from, dest, options) unless !options[:overwrite] && File.exist?(dest)
     end
   when :local_to_local
+    if options[:include_regex].any? || options[:exclude_regex].any?
+      fail "Include/exclude not supported on local-to-local copies"
+    end
     if options[:recursive]
       FileUtils.cp_r from, to
     else

@@ -1,4 +1,10 @@
-=== 0.2.3 / (Pending)
+=== 0.2.4 / (Pending)
+
+=== 0.2.3 / (2012-02-24)
+
+* Added: --include and --exclude REGEX support for s3cp
+
+* Added: --sync mode for s3cp
 
 === 0.2.2 / (2012-02-23)
 
