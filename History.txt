@@ -1,4 +1,31 @@
-=== 0.2.4 / (Pending)
+=== 0.2.5 / (Pending)
+
+=== 0.2.4 / 2012-02-27
+
+* Fixed: Handling of relative paths in s3cp.
+
+  % s3cp -r bucket:path/to/files /local/path
+
+  will now produce local files:
+
+     /local/path/files/A
+     /local/path/files/B
+     /local/path/files/C
+     /local/path/files2/D
+     /local/path/files2/E
+     ...
+
+  whereas,
+
+  % s3cp -r bucket:path/to/files/ /local/path
+
+
+    /local/path/A
+    /local/path/B
+    /local/path/C
+    ...
+
+  (note the trailing slash on "bucket:path/to/files")
 
 === 0.2.3 / (2012-02-24)
 

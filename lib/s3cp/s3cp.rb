@@ -198,8 +198,11 @@ def no_slash(path)
   path.match(/^\//) ? path[1..-1] : path
 end
 
+# relative("path/to/", "path/to/file") => "file"
+# relative("path/to",  "path/to/file") => "to/file"
 def relative(base, path)
-  no_slash(path[base.length..-1])
+  dir = base.rindex("/") ? base[0..base.rindex("/")] : ""
+  no_slash(path[dir.length..-1])
 end
 
 def log(msg)
