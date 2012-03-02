@@ -1,6 +1,6 @@
 === 0.2.6 / (Pending)
 
-=== 0.2.5 / (Pending)
+=== 0.2.5 / 2012-03-02
 
 * Added: "s3du" command to calculate disk usage.
          Supports --depth, --regex, --unit parameters and more!
