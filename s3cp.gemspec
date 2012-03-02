@@ -49,6 +49,7 @@ Gem::Specification.new do |s|
   s.executables << 's3cp'
   s.executables << 's3cp_complete'
   s.executables << 's3dir'
+  s.executables << 's3du'
   s.executables << 's3ls'
   s.executables << 's3mod'
   s.executables << 's3rm'

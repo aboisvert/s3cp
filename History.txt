@@ -1,4 +1,14 @@
+=== 0.2.6 / (Pending)
+
 === 0.2.5 / (Pending)
+
+* Added: "s3du" command to calculate disk usage.
+         Supports --depth, --regex, --unit parameters and more!
+
+* Changed: "s3ls -l" command now accepts --unit and --precision to configure
+           file size display.  Uses "smart" unit by default.
+
+* Changed: "s3ls -l" will now use S3CP_DATE_FORMAT environment if set.
 
 === 0.2.4 / 2012-02-27
 

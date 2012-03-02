@@ -18,6 +18,9 @@
 module S3CP
   extend self
 
+  # Valid units for file size formatting
+  UNITS = %w{B KB MB GB TB EB ZB YB BB}
+
   # Connect to AWS S3
   def connect()
     access_key = ENV["AWS_ACCESS_KEY_ID"]     || raise("Missing environment variable AWS_ACCESS_KEY_ID")
@@ -41,5 +44,48 @@ module S3CP
     end
     [bucket, key]
   end
+
+  # Round a number at some `decimals` level of precision.
+  def round(n, decimals = 0)
+    (n * (10.0 ** decimals)).round * (10.0 ** (-decimals))
+  end
+
+  # Return a formatted string for a file size.
+  #
+  # Valid units are "b" (bytes), "kb" (kilobytes), "mb" (megabytes),
+  # "gb" (gigabytes), "tb" (terabytes), "eb" (exabytes), "zb" (zettabytes),
+  # "yb" (yottabytes), "bb" (brontobytes) and their uppercase equivalents.
+  #
+  # If :unit option isn't specified, the "best" unit is automatically picked.
+  # If :precision option isn't specified, the number is rounded to closest integer.
+  #
+  # e.g.  format_filesize( 512, :unit => "b",  :precision => 2) =>    "512B"
+  #       format_filesize( 512, :unit => "kb", :precision => 4) =>   "0.5KB"
+  #       format_filesize(1512, :unit => "kb", :precision => 3) => "1.477KB"
+  #
+  #       format_filesize(11789512) => "11MB"  # smart unit selection
+  #
+  #       format_filesize(11789512, :precision => 2) => "11.24MB"
+  #
+  def format_filesize(num, options = {})
+    precision = options[:precision] || 0
+    if options[:unit]
+      unit = options[:unit].upcase
+      fail "Invalid unit" unless UNITS.include?(unit)
+      num = num.to_f
+      for u in UNITS
+        if u == unit
+          s = "%0.#{precision}f" % round(num, precision)
+          return s + unit
+        end
+        num = num / 1024
+      end
+    else
+      e = (Math.log(num) / Math.log(1024)).floor
+      s = "%0.#{precision}f" % round((num.to_f / 1024**e), precision)
+      s + UNITS[e]
+    end
+  end
+
 end
 

@@ -26,8 +26,9 @@ require 's3cp/utils'
 
 # Parse arguments
 options = {}
-options[:date_format] = '%x %X'
+options[:date_format] = ENV['S3CP_DATE_FORMAT'] || '%x %X'
 options[:rows_per_page] = $terminal.output_rows if $stdout.isatty
+options[:precision] = 0
 
 op = OptionParser.new do |opts|
   opts.banner = "s3ls [path]"
@@ -55,6 +56,14 @@ op = OptionParser.new do |opts|
 
   opts.on("--delimiter CHAR", "Display keys starting with given path prefix and up to delimiter character") do |delimiter|
     options[:delimiter] = delimiter
+  end
+
+  opts.on("--unit UNIT", "Force unit to use for file size display: #{S3CP::UNITS.join(', ')}.") do |unit|
+    options[:unit] = unit
+  end
+
+  opts.on("--precision PRECISION", "Precision used to display sizes, e.g. 3 => 0.123GB. (default 0)") do |precision|
+    options[:precision] = precision.to_i
   end
 
   opts.on_tail("-h", "--help", "Show this message") do
@@ -109,7 +118,9 @@ s3_options[:delimiter] = options[:delimiter] if options[:delimiter]
     if options[:long_format] && entry[:last_modified] && entry[:size]
       last_modified = DateTime.parse(entry[:last_modified])
       size = entry[:size]
-      puts "#{last_modified.strftime(options[:date_format])} #{ "%12d" % size} #{key}"
+      size = S3CP.format_filesize(size, :unit => options[:unit], :precision => options[:precision])
+      size = ("%#{7 + options[:precision]}s " % size)
+      puts "#{last_modified.strftime(options[:date_format])} #{size} #{key}"
     else
       puts key
     end
