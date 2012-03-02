@@ -32,7 +32,7 @@ options[:depth]     = 0
 options[:regex]     = nil
 
 op = OptionParser.new do |opts|
-  opts.banner = "s3ls [path]"
+  opts.banner = "s3du [path]  # Display disk usage"
   opts.separator ''
 
   opts.on("--unit UNIT", "Force unit to use for file size display: #{S3CP::UNITS.join(', ')}.") do |unit|

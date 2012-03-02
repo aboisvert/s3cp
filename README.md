@@ -31,6 +31,7 @@ If you want to hack on s3cp and build the gem yourself, you will need Bundler (h
     s3cp local_file.bin s3://mybucket/some/path
     s3mod s3://mybucket/path/to/some/file.txt public-read
     s3stat s3://mybucket/path/to/some/file.txt
+    s3du --depth 2 --unit mb s3://mybucket/some/path/
 
 Use the `-h` option to learn about command-line options.
 
@@ -98,6 +99,16 @@ To install Bash completion for S3 URLs, add the following to ~/.bashrc:
 
         --debug                      Debug mode
         --tty                        TTY mode
+    -h, --help                       Show this message
+
+---
+
+    $ s3du [path] # Display disk usage
+
+        --unit UNIT                  Force unit to use for file size display: B, KB, MB, GB, TB, EB, ZB, YB, BB.
+        --precision PRECISION        Precision used to display sizes, e.g. 3 => 0.123GB. (default 0)
+        --depth DEPTH                Depth to report space usage (default 0).
+        --regex REGEX                Regular expression to match keys.
     -h, --help                       Show this message
 
 ---
