@@ -1,4 +1,9 @@
-=== 0.2.6 / (Pending)
+=== 0.2.7 / (Pending)
+
+=== 0.2.6 / 2012-03-06
+
+* Fixed:  Possible division-by-zero error in s3du if it encounters
+          zero-length files.
 
 === 0.2.5 / 2012-03-02
 

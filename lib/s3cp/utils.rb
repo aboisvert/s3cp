@@ -81,7 +81,7 @@ module S3CP
         num = num / 1024
       end
     else
-      e = (Math.log(num) / Math.log(1024)).floor
+      e = (num == 0) ? 0 : (Math.log(num) / Math.log(1024)).floor
       s = "%0.#{precision}f" % round((num.to_f / 1024**e), precision)
       s + UNITS[e]
     end
