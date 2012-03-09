@@ -1,3 +1,10 @@
+=== 1.0.2 / (Pending)
+
+* Added:  `s3up` now outputs uploaded file size to STDERR, e.g.,
+
+          % ls | s3up s3://bucket/path/to/file
+          s3://bucket/path/to/file => 214B
+
 === 1.0.1 / 2012-03-9
 
 * Added:  New command `s3up` to upload STDIN to S3

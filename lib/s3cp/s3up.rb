@@ -92,6 +92,7 @@ temp.open
 # upload temp file
 begin
   @s3.interface.put(bucket, key, temp, @headers)
+  STDERR.puts "s3://#{bucket}/#{key} => #{S3CP.format_filesize(temp.size)} "
 ensure
   # cleanup
   temp.close
