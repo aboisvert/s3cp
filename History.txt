@@ -1,3 +1,13 @@
+=== 1.0.1 / 2012-03-9
+
+* Added:  New command `s3up` to upload STDIN to S3
+          e.g. some_cmd | s3up s3://bucket/path/to/destination
+
+  Note: `s3up` does not yet directly stream data to S3 since right_aws gem
+        requires the upload size to be known in advance. `s3up` currently
+        persists STDIN into a temp file although this may change in the
+        future.
+
 === 1.0.0 / 2012-03-9
 
 Pop the champagne!  It's time we called this a one-oh!! :)
