@@ -54,19 +54,7 @@ unless ARGV.size > 0
   exit
 end
 
-def headers_array_to_hash(header_array)
-  headers = {}
-  header_array.each do |header|
-    header_parts = header.split(": ", 2)
-    if header_parts.size == 2
-      headers[header_parts[0].downcase] = header_parts[1]  # RightAWS gem expect lowercase header names :(
-    else
-      log("Header ignored because of error splitting [#{header}].  Expected colon delimiter; e.g. Header: Value")
-    end
-  end
-  headers
-end
-@headers = headers_array_to_hash(options[:headers])
+@headers = S3CP.headers_array_to_hash(options[:headers])
 
 url = ARGV[0]
 
