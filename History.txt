@@ -1,3 +1,19 @@
+=== 1.0.0 / 2012-03-9
+
+Pop the champagne!  It's time we called this a one-oh!! :)
+
+S3CP now offers the feature set originally intended and it's been used reliably
+by several people for several weeks and so deemed to be robust enough for
+everyday use -- with the usual disclaimer that there are probably undiscovered
+bugs -- but at least all known bugs have been addressed.
+
+Probably worth mentioning: there are two outstanding experimental features,
+
+1) s3cp --sync:  Does not handle missing files.  It's basically
+                 a faster copy; not a true "sync" at this point.
+
+2) Bash command-line completion is still very rough.
+
 === 0.2.7 / 2012-03-09
 
 * Fixed #3: s3cp adds extra slash when copying to the root of a bucket.
