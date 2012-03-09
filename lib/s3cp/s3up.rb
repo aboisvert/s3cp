@@ -77,7 +77,6 @@ fail "Your URL looks funny, doesn't it?" unless bucket
 
 # copy all of STDIN to a temp file
 temp = Tempfile.new('s3cp')
-f = File.new("newfile2.zip",  "wb")
 while true
   begin
     data = STDIN.sysread(4 * 1024)
