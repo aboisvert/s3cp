@@ -1,5 +1,8 @@
 === 0.2.7 / (Pending)
 
+* Fixed #3: s3cp adds extra slash when copying to the root of a bucket.
+            e.g. s3://myBucket//someFile or s3://myBucket//someFolderToCopy/someFile
+
 === 0.2.6 / 2012-03-06
 
 * Fixed:  Possible division-by-zero error in s3du if it encounters

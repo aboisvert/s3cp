@@ -138,6 +138,12 @@ end
 destination = ARGV.last
 sources = ARGV[0..-2]
 
+if options[:debug]
+  puts "sources: #{sources.inspect}"
+  puts "destination: #{destination}"
+  puts "Options: \n#{options.inspect}"
+end
+
 class Proxy
   instance_methods.each { |m| undef_method m unless m =~ /(^__|^send$|^object_id$)/ }
 
@@ -157,17 +163,9 @@ def s3?(url)
   S3CP.bucket_and_key(url)[0]
 end
 
-if options[:debug]
-  puts "URL: #{url}"
-  puts "Options: \n#{options.inspect}"
-end
-
 if options[:verbose]
   @verbose = true
 end
-
-@bucket = $1
-@prefix = $2
 
 @includes = options[:include_regex].map { |s| Regexp.new(s) }
 @excludes = options[:exclude_regex].map { |s| Regexp.new(s) }
@@ -419,6 +417,14 @@ def s3_checksum(bucket, key)
   md5
 end
 
+def key_path(prefix, key)
+  if (prefix.nil? || prefix.strip == '')
+    key
+  else
+    no_slash(prefix) + '/' + key
+  end
+end
+
 def s3_size(bucket, key)
   metadata = @s3.interface.head(bucket, key)
   metadata["content-length"].to_i
@@ -437,7 +443,7 @@ def copy(from, to, options)
       end
       keys.each do |key|
         if match(key)
-          dest = no_slash(key_to) + '/' + relative(key_from, key)
+          dest = key_path key_to, relative(key_from, key)
           s3_to_s3(bucket_from, key, bucket_to, dest) unless !options[:overwrite] && s3_exist?(bucket_to, dest)
         end
       end
@@ -449,7 +455,10 @@ def copy(from, to, options)
       files = Dir[from + "/**/*"]
       files.each do |f|
         if File.file?(f) && match(f)
-          key = no_slash(key_to) + '/' + relative(from, f)
+          puts "bucket_to #{bucket_to}"
+          puts "no_slash(key_to) #{no_slash(key_to)}"
+          puts "relative(from, f) #{relative(from, f)}"
+          key = key_path key_to, relative(from, f)
           local_to_s3(bucket_to, key, File.expand_path(f), options) unless !options[:overwrite] && s3_exist?(bucket_to, key)
         end
       end
