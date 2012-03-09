@@ -1,4 +1,4 @@
-=== 1.0.2 / (Pending)
+=== 1.0.2 / 2012-03-9
 
 * Added:  `s3up` now outputs uploaded file size to STDERR, e.g.,
 
