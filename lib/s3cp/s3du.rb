@@ -113,7 +113,7 @@ begin
       if options[:regex].nil? || options[:regex].match(key)
         current_key = if actual_depth
           pos = nth_occurrence(key, "/", actual_depth)
-          pos ? key[0..pos-1] : prefix
+          (pos != -1) ? key[0..pos-1] : key
         end
 
         if (last_key && last_key != current_key)

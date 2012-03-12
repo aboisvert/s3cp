@@ -2,6 +2,8 @@
 
 * Fixed:  `s3ls` and `s3du` now properly handle Errno::EPIPE
 
+* Fixed:  `s3du` would not display last character of files
+
 === 1.0.2 / 2012-03-9
 
 * Added:  `s3up` now outputs uploaded file size to STDERR, e.g.,
