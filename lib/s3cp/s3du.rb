@@ -102,39 +102,43 @@ def print(key, size)
   puts ("%#{7 + @options[:precision]}s " % size) + key
 end
 
-@s3.interface.incrementally_list_bucket(@bucket, s3_options) do |page|
+begin
+  @s3.interface.incrementally_list_bucket(@bucket, s3_options) do |page|
 
-  entries = page[:contents]
-  entries.each do |entry|
-    key  = entry[:key]
-    size = entry[:size]
+    entries = page[:contents]
+    entries.each do |entry|
+      key  = entry[:key]
+      size = entry[:size]
 
-    if options[:regex].nil? || options[:regex].match(key)
-      current_key = if actual_depth
-        pos = nth_occurrence(key, "/", actual_depth)
-        pos ? key[0..pos-1] : prefix
+      if options[:regex].nil? || options[:regex].match(key)
+        current_key = if actual_depth
+          pos = nth_occurrence(key, "/", actual_depth)
+          pos ? key[0..pos-1] : prefix
+        end
+
+        if (last_key && last_key != current_key)
+          print(last_key, subtotal_size)
+          subtotal_size = size
+        else
+          subtotal_size += size
+        end
+
+        last_key = current_key
+        total_size += size
       end
-
-      if (last_key && last_key != current_key)
-        print(last_key, subtotal_size)
-        subtotal_size = size
-      else
-        subtotal_size += size
-      end
-
-      last_key = current_key
-      total_size += size
     end
   end
-end
 
-if last_key != nil
-  print(last_key, subtotal_size)
-end
+  if last_key != nil
+    print(last_key, subtotal_size)
+  end
 
-if options[:depth] > 0
-  print("", total_size)
-else
-  puts S3CP.format_filesize(total_size, :unit => options[:unit], :precision => options[:precision])
+  if options[:depth] > 0
+    print("", total_size)
+  else
+    puts S3CP.format_filesize(total_size, :unit => options[:unit], :precision => options[:precision])
+  end
+rescue Errno::EPIPE
+  # ignore
 end
 

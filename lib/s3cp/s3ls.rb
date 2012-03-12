@@ -103,39 +103,43 @@ s3_options[:prefix] = @key
 s3_options["max-keys"] = options[:max_keys] if options[:max_keys] && !options[:delimiter]
 s3_options[:delimiter] = options[:delimiter] if options[:delimiter]
 
-@s3.interface.incrementally_list_bucket(@bucket, s3_options) do |page|
-  entries = []
-  if options[:delimiter]
-    entries << { :key => page[:contents][0][:key] } if page[:contents].length > 0 && entries.length > 0
-    page[:common_prefixes].each do |entry|
-      entries << { :key => entry }
+begin
+  @s3.interface.incrementally_list_bucket(@bucket, s3_options) do |page|
+    entries = []
+    if options[:delimiter]
+      entries << { :key => page[:contents][0][:key] } if page[:contents].length > 0 && entries.length > 0
+      page[:common_prefixes].each do |entry|
+        entries << { :key => entry }
+      end
+      entries << { :key => nil }
     end
-    entries << { :key => nil }
+    entries += page[:contents]
+    entries.each do |entry|
+      key = entry[:key] ? "s3://#{@bucket}/#{entry[:key]}" : "---"
+      if options[:long_format] && entry[:last_modified] && entry[:size]
+        last_modified = DateTime.parse(entry[:last_modified])
+        size = entry[:size]
+        size = S3CP.format_filesize(size, :unit => options[:unit], :precision => options[:precision])
+        size = ("%#{7 + options[:precision]}s " % size)
+        puts "#{last_modified.strftime(options[:date_format])} #{size} #{key}"
+      else
+        puts key
+      end
+      rows += 1
+      keys += 1
+      if options[:max_keys] && keys >= options[:max_keys]
+        exit
+      end
+      if options[:rows_per_page] && (rows % options[:rows_per_page] == 0)
+        begin
+          print "Continue? (Y/n) "
+          response = STDIN.gets.chomp.downcase
+        end until response == 'n' || response == 'y' || response == ''
+        exit if response == 'n'
+      end
+    end
   end
-  entries += page[:contents]
-  entries.each do |entry|
-    key = entry[:key] ? "s3://#{@bucket}/#{entry[:key]}" : "---"
-    if options[:long_format] && entry[:last_modified] && entry[:size]
-      last_modified = DateTime.parse(entry[:last_modified])
-      size = entry[:size]
-      size = S3CP.format_filesize(size, :unit => options[:unit], :precision => options[:precision])
-      size = ("%#{7 + options[:precision]}s " % size)
-      puts "#{last_modified.strftime(options[:date_format])} #{size} #{key}"
-    else
-      puts key
-    end
-    rows += 1
-    keys += 1
-    if options[:max_keys] && keys >= options[:max_keys]
-      exit
-    end
-    if options[:rows_per_page] && (rows % options[:rows_per_page] == 0)
-      begin
-        print "Continue? (Y/n) "
-        response = STDIN.gets.chomp.downcase
-      end until response == 'n' || response == 'y' || response == ''
-      exit if response == 'n'
-    end
-  end
+rescue Errno::EPIPE
+  # ignore
 end
 
