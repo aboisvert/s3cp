@@ -33,8 +33,10 @@ options[:verbose] = $stdout.isatty ? true : false
 options[:headers] = []
 options[:overwrite]   = ENV["S3CP_OVERWRITE"]   ? (ENV["S3CP_OVERWRITE"] =~ /y|yes|true|1|^\s*$/i ? true : false) : true
 options[:checksum]    = ENV["S3CP_CHECKSUM"]    ? (ENV["S3CP_CHECKSUM"]  =~ /y|yes|true|1|^\s*$/i ? true : false) : true
-options[:retries]     = ENV["S3CP_RETRIES"]     ? ENV["S3CP_RETRIES"].to_i     : 5
+options[:retries]     = ENV["S3CP_RETRIES"]     ? ENV["S3CP_RETRIES"].to_i     : 18
 options[:retry_delay] = ENV["S3CP_RETRY_DELAY"] ? ENV["S3CP_RETRY_DELAY"].to_i : 1
+options[:retry_backoff] = ENV["S3CP_BACKOFF"]   ? ENV["S3CP_BACKOFF"].to_f     : 1.4142 # double every 2 tries
+
 options[:include_regex] = []
 options[:exclude_regex] = []
 options[:sync] = false
@@ -80,6 +82,10 @@ op = OptionParser.new do |opts|
 
   opts.on("--retry-delay SECONDS", "Time to wait (in seconds) between retries (default #{options[:retry_delay]})") do |delay|
     options[:retry_delay] = delay.to_i
+  end
+
+  opts.on("--retry-backoff FACTOR", "Exponential backoff factor (default #{options[:retry_backoff]})") do |factor|
+    options[:retry_backoff] = factor.to_f
   end
 
   opts.on("--no-checksum", "Disable checksum checking") do
@@ -266,8 +272,9 @@ def local_to_s3(bucket_to, key, file, options = {})
         fail "Unable to upload to s3://#{bucket_to}/#{key} after #{retries} attempts."
       end
       if retries > 0
-        STDERR.puts "Warning: failed checksum for s3://#{bucket_to}/#{bucket_to}. Retrying #{options[:retries] - retries} more time(s)."
-        sleep options[:retry_delay]
+        delay = options[:retry_delay] * (options[:retry_backoff] ** retries)
+        STDERR.puts "Sleeping #{delay} seconds.  Will retry #{options[:retries] - retries} more time(s)."
+        sleep delay
       end
 
       f = File.open(file)
@@ -285,7 +292,7 @@ def local_to_s3(bucket_to, key, file, options = {})
                 @progress_bar.inc result.length if result
                 result
               rescue => e
-                puts e
+                STDERR.puts e
                 raise e
               end
             end
@@ -300,8 +307,12 @@ def local_to_s3(bucket_to, key, file, options = {})
 
         if options[:checksum]
           actual_md5 = s3_checksum(bucket_to, key)
-          unless actual_md5.is_a? String
-            STDERR.puts "Warning: invalid MD5 checksum in metadata; skipped checksum verification."
+          if actual_md5.is_a? String
+            if actual_md5 != expected_md5
+              STDERR.puts "Warning: invalid MD5 checksum.  Expected: #{expected_md5} Actual: #{actual_md5}"
+            end
+          else
+            STDERR.puts "Warning: invalid MD5 checksum in metadata: #{actual_md5.inspect}; skipped checksum verification."
             actual_md5 = nil
           end
         end
@@ -328,8 +339,9 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
       fail "Unable to download s3://#{bucket_from}/#{key_from} after #{retries} attempts."
     end
     if retries > 0
-      STDERR.puts "Warning: failed checksum for s3://#{bucket_from}/#{key_from}. Retrying #{options[:retries] - retries} more time(s)."
-      sleep options[:retry_delay]
+      delay = options[:retry_delay] * (options[:retry_backoff] ** retries)
+      STDERR.puts "Sleeping #{delay} seconds.  Will retry #{options[:retries] - retries} more time(s)."
+      sleep delay
     end
     begin
       expected_md5 = if options[:checksum] || options[:sync]
@@ -377,6 +389,14 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
       raise e unless options[:checksum]
       STDERR.puts e
     end
+
+    if options[:checksum] && expected_md5 != nil
+      actual_md5 = md5(dest)
+      if actual_md5 != expected_md5
+        STDERR.puts "Warning: invalid MD5 checksum.  Expected: #{expected_md5} Actual: #{actual_md5}"
+      end
+    end
+
     retries += 1
   end until options[:checksum] == false || expected_md5.nil? || md5(dest) == expected_md5
 end

@@ -1,5 +1,17 @@
 === 1.0.3 / (Pending)
 
+* Added:    Exponential backoff for `s3cp` command based on the formula:
+
+              delay = initial_retry_delay * (factor ^ retries)
+
+            where:
+                    - `initial_retry_delay` is 1 second by default.
+                    - `factor` is 1.4142 by default
+                      (retry delay doubles every two retries)
+                    - max. number of retries is now 20 by default.
+
+            (which means s3cp retries for roughly 58 minutes by default)
+
 * Fixed:  `s3ls` and `s3du` now properly handle Errno::EPIPE
 
 * Fixed:  `s3du` would not display last character of files
