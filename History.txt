@@ -1,4 +1,4 @@
-=== 1.0.3 / (Pending)
+=== 1.0.3 / (2012-05-11)
 
 * Added:    Exponential backoff for `s3cp` command based on the formula:
 
