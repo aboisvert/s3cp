@@ -31,7 +31,7 @@ require 's3cp/utils'
 options = {}
 options[:verbose] = $stdout.isatty ? true : false
 options[:headers] = []
-options[:overwrite]   = ENV["S3CP_RETRIES"]     ? (ENV["S3CP_OVERWRITE"] =~ /y|yes|true|1|^\s*$/i ? true : false) : true
+options[:overwrite]   = ENV["S3CP_OVERWRITE"]   ? (ENV["S3CP_OVERWRITE"] =~ /y|yes|true|1|^\s*$/i ? true : false) : true
 options[:checksum]    = ENV["S3CP_CHECKSUM"]    ? (ENV["S3CP_CHECKSUM"]  =~ /y|yes|true|1|^\s*$/i ? true : false) : true
 options[:retries]     = ENV["S3CP_RETRIES"]     ? ENV["S3CP_RETRIES"].to_i     : 5
 options[:retry_delay] = ENV["S3CP_RETRY_DELAY"] ? ENV["S3CP_RETRY_DELAY"].to_i : 1
