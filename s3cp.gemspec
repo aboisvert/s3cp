@@ -52,6 +52,7 @@ Gem::Specification.new do |s|
   s.executables << 's3du'
   s.executables << 's3ls'
   s.executables << 's3mod'
+  s.executables << 's3mv'
   s.executables << 's3rm'
   s.executables << 's3stat'
   s.executables << 's3up'

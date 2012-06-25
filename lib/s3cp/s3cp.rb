@@ -40,6 +40,7 @@ options[:retry_backoff] = ENV["S3CP_BACKOFF"]   ? ENV["S3CP_BACKOFF"].to_f     :
 options[:include_regex] = []
 options[:exclude_regex] = []
 options[:sync] = false
+options[:move] = false
 
 op = OptionParser.new do |opts|
   opts.banner = <<-BANNER
@@ -74,6 +75,10 @@ op = OptionParser.new do |opts|
 
   opts.on("--sync", "Sync mode: use checksum to determine if files need copying.") do
     options[:sync] = true
+  end
+
+  opts.on("--move", "Move mode: delete original file(s) after copying.") do
+    options[:move] = true
   end
 
   opts.on("--max-attempts N", "Number of attempts to upload/download until checksum matches (default #{options[:retries]})") do |attempts|
@@ -236,13 +241,14 @@ def md5(filename)
   digest.hexdigest
 end
 
-def s3_to_s3(bucket_from, key, bucket_to, dest)
+def s3_to_s3(bucket_from, key, bucket_to, dest, options = {})
   log(with_headers("Copy s3://#{bucket_from}/#{key} to s3://#{bucket_to}/#{dest}"))
   if @headers.empty?
     @s3.interface.copy(bucket_from, key, bucket_to, dest)
   else
     @s3.interface.copy(bucket_from, key, bucket_to, dest, :copy, @headers)
   end
+  @s3.interface.delete(bucket_from, key) if options[:move]
 end
 
 def local_to_s3(bucket_to, key, file, options = {})
@@ -327,6 +333,7 @@ def local_to_s3(bucket_to, key, file, options = {})
   else
     log "Already synchronized."
   end
+  FileUtils.rm file if options[:move]
 end
 
 def s3_to_local(bucket_from, key_from, dest, options = {})
@@ -399,6 +406,8 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
 
     retries += 1
   end until options[:checksum] == false || expected_md5.nil? || md5(dest) == expected_md5
+
+  @s3.interface.delete(bucket_from, key_from) if options[:move]
 end
 
 def s3_exist?(bucket, key)
@@ -452,11 +461,11 @@ def copy(from, to, options)
       keys.each do |key|
         if match(key)
           dest = key_path key_to, relative(key_from, key)
-          s3_to_s3(bucket_from, key, bucket_to, dest) unless !options[:overwrite] && s3_exist?(bucket_to, dest)
+          s3_to_s3(bucket_from, key, bucket_to, dest, options) unless !options[:overwrite] && s3_exist?(bucket_to, dest)
         end
       end
     else
-      s3_to_s3(bucket_from, key_from, bucket_to, key_to) unless !options[:overwrite] && s3_exist?(bucket_to, key_to)
+      s3_to_s3(bucket_from, key_from, bucket_to, key_to, options) unless !options[:overwrite] && s3_exist?(bucket_to, key_to)
     end
   when :local_to_s3
     if options[:recursive]
@@ -500,8 +509,10 @@ def copy(from, to, options)
     end
     if options[:recursive]
       FileUtils.cp_r from, to
+      FileUtils.rm_r from if options[:move]
     else
       FileUtils.cp from, to
+      FileUtils.rm from if options[:move]
     end
   end
 end

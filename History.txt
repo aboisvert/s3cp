@@ -1,3 +1,7 @@
+=== 1.0.5 / (2012-06-25)
+
+* Added:   New command 's3mv' to move files; s3mv is an alias to s3cp --move.
+
 === 1.0.4 / (2012-06-25)
 
 * Fixed:  Potential "undefined method `finish' for nil:NilClass" error in s3cp.
