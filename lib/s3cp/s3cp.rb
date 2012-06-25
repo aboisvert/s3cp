@@ -374,7 +374,7 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
             f.write(chunk)
             progress_bar.inc chunk.size if progress_bar
           end
-          progress_bar.finish
+          progress_bar.finish if progress_bar
         rescue => e
           progress_bar.halt if progress_bar
           raise e
