@@ -15,10 +15,6 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-require 'rubygems'
-require 'extensions/kernel' if RUBY_VERSION =~ /1.8/
-require 'right_aws'
-require 'optparse'
 require 's3cp/utils'
 
 op = OptionParser.new do |opts|
@@ -40,15 +36,11 @@ end
 source  = ARGV[0]
 permission = ARGV.last
 
-@s3 = S3CP.connect()
+@bucket, @key = S3CP.bucket_and_key(source)
+@s3 = S3CP.connect().buckets[@bucket]
 
-def get_metadata(bucket, key)
-  metadata = @s3.interface.head(bucket, key)
-  metadata.sort.each do |k,v|
-    puts "#{"%20s" % k} #{v}"
-  end
+metadata = @s3.objects[@key].head
+metadata.keys.sort { |k1, k2| k1.to_s <=> k2.to_s}.each do |k|
+  puts "#{"%30s" % k} #{metadata[k]}"
 end
-
-bucket,key = S3CP.bucket_and_key(source)
-get_metadata(bucket, key)
 
