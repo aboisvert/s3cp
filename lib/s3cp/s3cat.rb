@@ -15,16 +15,9 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-require 'rubygems'
-require 'extensions/kernel' if RUBY_VERSION =~ /1.8/
-require 'right_aws'
-require 'optparse'
-require 'date'
-require 'highline/import'
-require 'tempfile'
-require 'progressbar'
-
 require 's3cp/utils'
+require 'progressbar'
+require 'tempfile'
 
 # Parse arguments
 options = {}
@@ -64,12 +57,12 @@ end
 @bucket, @prefix = S3CP.bucket_and_key(url)
 fail "Your URL looks funny, doesn't it?" unless @bucket
 
-@s3 = S3CP.connect().interface
+@s3 = S3CP.connect().buckets[@bucket]
 
 if options[:tty]
   # store contents to file to display with PAGER
-  metadata = @s3.head(@bucket, @prefix)
-  size = metadata["content-length"].to_i
+  metadata = @s3.objects[@prefix].head
+  size = metadata[:content_length].to_i
 
   progress_bar = ProgressBar.new(File.basename(@prefix), size).tap do |p|
     p.file_transfer_mode
@@ -78,7 +71,7 @@ if options[:tty]
   file = Tempfile.new('s3cat')
   out = File.new(file.path, "wb")
   begin
-    @s3.get(@bucket, @prefix) do |chunk|
+    @s3.objects[@prefix].read_as_stream do |chunk|
       out.write(chunk)
       progress_bar.inc chunk.size
     end
@@ -89,7 +82,7 @@ if options[:tty]
   exec "#{ENV['PAGER'] || 'less'} #{file.path}"
   file.delete()
 else
-  @s3.get(@bucket, @prefix) do |chunk|
+  @s3.objects[@prefix].read_as_stream do |chunk|
     begin
       STDOUT.print(chunk)
     rescue Errno::EPIPE

@@ -15,17 +15,8 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-require 'rubygems'
-require 'extensions/kernel' if RUBY_VERSION =~ /1.8/
-require 'right_aws'
-require 'optparse'
-require 'date'
-require 'highline/import'
-require 'fileutils'
-require 'digest'
-require 'progressbar'
-
 require 's3cp/utils'
+require 'progressbar'
 
 # Parse arguments
 options = {}
@@ -243,12 +234,15 @@ end
 
 def s3_to_s3(bucket_from, key, bucket_to, dest, options = {})
   log(with_headers("Copy s3://#{bucket_from}/#{key} to s3://#{bucket_to}/#{dest}"))
-  if @headers.empty?
-    @s3.interface.copy(bucket_from, key, bucket_to, dest)
+  s3_source = @s3.buckets[bucket_from].objects[key]
+  s3_dest = @s3.buckets[bucket_to].objects[dest]
+  options = {}
+  options[:metadata] = @headers if @headers
+  unless options[:move]
+    s3_source.copy_to(s3_dest, options)
   else
-    @s3.interface.copy(bucket_from, key, bucket_to, dest, :copy, @headers)
+    s3_source.move_to(s3_dest, options)
   end
-  @s3.interface.delete(bucket_from, key) if options[:move]
 end
 
 def local_to_s3(bucket_to, key, file, options = {})
@@ -279,37 +273,32 @@ def local_to_s3(bucket_to, key, file, options = {})
       end
       if retries > 0
         delay = options[:retry_delay] * (options[:retry_backoff] ** retries)
-        STDERR.puts "Sleeping #{delay} seconds.  Will retry #{options[:retries] - retries} more time(s)."
+        STDERR.puts "Sleeping #{"%0.2f" % delay} seconds.  Will retry #{options[:retries] - retries} more time(s)."
         sleep delay
       end
 
-      f = File.open(file)
       begin
-        if $stdout.isatty
-          f = Proxy.new(f)
-          progress_bar = ProgressBar.new(File.basename(file), File.size(file)).tap do |p|
-            p.file_transfer_mode
-          end
-          class << f
-            attr_accessor :progress_bar
+        s3_options = {
+          :bucket_name => bucket_to,
+          :key => key
+        }
+        s3_options[:metadata] = @headers if @headers
+        s3_options[:content_length] = File.size(file)
 
-            def read(length, buffer=nil)
-              begin
-                result = @target.read(length, buffer)
-                @progress_bar.inc result.length if result
-                result
-              rescue => e
-                STDERR.puts e
-                raise e
-              end
-            end
-          end
-          f.progress_bar = progress_bar
-        else
-          progress_bar = nil
+        progress_bar = ProgressBar.new(File.basename(file), File.size(file)).tap do |p|
+          p.file_transfer_mode
         end
 
-        meta = @s3.interface.put(bucket_to, key, f, @headers)
+        meta = @s3.client.put_object(s3_options) do |buffer|
+          File.open(file) do |io|
+            while !io.eof?
+              result = io.read(32 * 1024)
+              progress_bar.inc result.length if result
+              buffer.write(result)
+            end
+          end
+        end
+
         progress_bar.finish if progress_bar
 
         if options[:checksum]
@@ -329,10 +318,8 @@ def local_to_s3(bucket_to, key, file, options = {})
           progress_bar.clear
           puts "Error copying #{file} to s3://#{bucket_to}/#{key}"
         end
-        raise e if !options[:checksum] || e.to_s =~ /Denied/
+        raise e if !options[:checksum] || e.is_a?(AWS::S3::Errors::AccessDenied)
         STDERR.puts e
-      ensure
-        f.close()
       end
       retries += 1
     end until options[:checksum] == false || actual_md5.nil? || expected_md5 == actual_md5
@@ -353,7 +340,8 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
     end
     if retries > 0
       delay = options[:retry_delay] * (options[:retry_backoff] ** retries)
-      STDERR.puts "Sleeping #{delay} seconds.  Will retry #{options[:retries] - retries} more time(s)."
+      delay = delay.to_i
+      STDERR.puts "Sleeping #{"%0.2f" % delay} seconds.  Will retry #{options[:retries] - retries} more time(s)."
       sleep delay
     end
     begin
@@ -383,7 +371,7 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
               p.file_transfer_mode
             end
           end
-          @s3.interface.get(bucket_from, key_from) do |chunk|
+          @s3.buckets[bucket_from].objects[key_from].read_as_stream do |chunk|
             f.write(chunk)
             progress_bar.inc chunk.size if progress_bar
           end
@@ -413,25 +401,23 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
     retries += 1
   end until options[:checksum] == false || expected_md5.nil? || md5(dest) == expected_md5
 
-  @s3.interface.delete(bucket_from, key_from) if options[:move]
+  @s3.buckets[bucket_from].objects[key_from].delete() if options[:move]
 end
 
 def s3_exist?(bucket, key)
-  metadata = @s3.interface.head(bucket, key)
-  #puts "exist? #{bucket} #{key} => #{metadata != nil}"
-  (metadata != nil)
+  @s3.buckets[bucket].objects[key].exist?
 end
 
 def s3_checksum(bucket, key)
   begin
-    metadata = @s3.interface.head(bucket, key)
+    metadata = @s3.buckets[bucket].objects[key].head()
     return :not_found unless metadata
   rescue => e
-    return :not_found if e.is_a?(RightAws::AwsError) && e.http_code == "404"
+    return :not_found if e.is_a?(AWS::S3::Errors::NoSuchKey)
     raise e
   end
 
-  md5 = metadata["etag"] or fail "Unable to get etag/md5 for #{bucket_to}:#{key}"
+  md5 = metadata[:etag] or fail "Unable to get etag/md5 for #{bucket_to}:#{key}"
   return :invalid unless md5
 
   md5 = md5.sub(/^"/, "").sub(/"$/, "") # strip beginning and trailing quotes
@@ -449,8 +435,8 @@ def key_path(prefix, key)
 end
 
 def s3_size(bucket, key)
-  metadata = @s3.interface.head(bucket, key)
-  metadata["content-length"].to_i
+  metadata = @s3.buckets[bucket].objects[key].head()
+  metadata[:content_length].to_i
 end
 
 def copy(from, to, options)

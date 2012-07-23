@@ -108,6 +108,28 @@ module S3CP
       s + UNITS[e]
     end
   end
+end
 
+# Monkey-patch S3 object for download streaming
+# https://forums.aws.amazon.com/thread.jspa?messageID=295587
+module AWS
+
+  DEFAULT_STREAMING_CHUNK_SIZE = ENV["S3CP_STREAMING_CHUNK_SIZE"] ? ENV["S3CP_STREAMING_CHUNK_SIZE"].to_i : (512 * 1024)
+
+  class S3
+    class S3Object
+      def read_as_stream(options = nil, &blk)
+        options ||= {}
+        chunk_size = options[:chunk] || DEFAULT_STREAMING_CHUNK_SIZE
+        size = content_length
+        byte_offset = 0
+        while byte_offset < size
+          range = "bytes=#{byte_offset}-#{byte_offset + chunk_size - 1}"
+          yield read(:range => range)
+          byte_offset += chunk_size
+        end
+      end
+    end
+  end
 end
 
