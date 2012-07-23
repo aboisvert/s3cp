@@ -34,8 +34,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency("extensions", ["~> 0.6"])
   s.add_dependency("highline", ["~> 1.5.1"])
-  s.add_dependency("aboisvert_aws", ["~> 3.0.0"])
-  s.add_dependency("right_http_connection", ["~> 1.3.0"])
+  s.add_dependency("aws-sdk", ["~> 1.5.7"])
   s.add_dependency("progressbar", ["~> 0.10.0"])
 
   s.add_development_dependency("rspec", ["~> 2.5.0"])

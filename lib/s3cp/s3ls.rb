@@ -15,19 +15,12 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-require 'rubygems'
-require 'extensions/kernel' if RUBY_VERSION =~ /1.8/
-require 'right_aws'
-require 'optparse'
-require 'date'
-require 'highline/import'
-
 require 's3cp/utils'
 
 # Parse arguments
 options = {}
 options[:date_format] = ENV['S3CP_DATE_FORMAT'] || '%x %X'
-options[:rows_per_page] = $terminal.output_rows if $stdout.isatty
+options[:rows_per_page] = ($terminal.output_rows - 1) if $stdout.isatty
 options[:precision] = 0
 
 op = OptionParser.new do |opts|
@@ -93,53 +86,49 @@ if options[:verbose]
   puts "key #{@key}"
 end
 
-@s3 = S3CP.connect()
+@s3 = S3CP.connect().buckets[@bucket]
 
 keys = 0
 rows = 0
 
-s3_options = Hash.new
-s3_options[:prefix] = @key
-s3_options["max-keys"] = options[:max_keys] if options[:max_keys] && !options[:delimiter]
-s3_options[:delimiter] = options[:delimiter] if options[:delimiter]
-
 begin
-  @s3.interface.incrementally_list_bucket(@bucket, s3_options) do |page|
-    entries = []
-    if options[:delimiter]
-      entries << { :key => page[:contents][0][:key] } if page[:contents].length > 0 && entries.length > 0
-      page[:common_prefixes].each do |entry|
-        entries << { :key => entry }
-      end
-      entries << { :key => nil }
+  display = lambda do |entry|
+    key = entry.key ? "s3://#{@bucket}/#{entry.key}" : "---"
+    if options[:long_format] && entry.last_modified && entry.content_length
+      size = entry.content_length
+      size = S3CP.format_filesize(size, :unit => options[:unit], :precision => options[:precision])
+      size = ("%#{7 + options[:precision]}s " % size)
+      puts "#{entry.last_modified.strftime(options[:date_format])} #{size} #{key}"
+    else
+      puts key
     end
-    entries += page[:contents]
-    entries.each do |entry|
-      key = entry[:key] ? "s3://#{@bucket}/#{entry[:key]}" : "---"
-      if options[:long_format] && entry[:last_modified] && entry[:size]
-        last_modified = DateTime.parse(entry[:last_modified])
-        size = entry[:size]
-        size = S3CP.format_filesize(size, :unit => options[:unit], :precision => options[:precision])
-        size = ("%#{7 + options[:precision]}s " % size)
-        puts "#{last_modified.strftime(options[:date_format])} #{size} #{key}"
-      else
-        puts key
+    rows += 1
+    keys += 1
+    if options[:rows_per_page] && (rows % options[:rows_per_page] == 0)
+      begin
+        print "Continue? (Y/n) "
+        response = STDIN.gets.chomp.downcase
+      end until response == 'n' || response == 'y' || response == ''
+      exit if response == 'n'
+    end
+  end
+
+  if options[:delimiter]
+    @s3.objects.with_prefix(@key).as_tree(:delimier => options[:delimiter], :append => false).children.each do |entry|
+      if entry.leaf?
+        entry = @s3.objects[entry.key]
+        break if display.call(entry)
       end
-      rows += 1
-      keys += 1
-      if options[:max_keys] && keys >= options[:max_keys]
-        exit
-      end
-      if options[:rows_per_page] && (rows % options[:rows_per_page] == 0)
-        begin
-          print "Continue? (Y/n) "
-          response = STDIN.gets.chomp.downcase
-        end until response == 'n' || response == 'y' || response == ''
-        exit if response == 'n'
-      end
+    end
+  else
+    s3_options = Hash.new
+    s3_options[:limit] = options[:max_keys] if options[:max_keys]
+    @s3.objects.with_prefix(@key).each(s3_options) do |entry|
+      break if display.call(entry)
     end
   end
 rescue Errno::EPIPE
   # ignore
+  break
 end
 

@@ -15,6 +15,13 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
+require 'rubygems'
+require 'extensions/kernel' if RUBY_VERSION =~ /1.8/
+require 'aws/s3'
+require 'optparse'
+require 'date'
+require 'highline/import'
+
 module S3CP
   extend self
 
@@ -26,8 +33,10 @@ module S3CP
     access_key = ENV["AWS_ACCESS_KEY_ID"]     || raise("Missing environment variable AWS_ACCESS_KEY_ID")
     secret_key = ENV["AWS_SECRET_ACCESS_KEY"] || raise("Missing environment variable AWS_SECRET_ACCESS_KEY")
 
-    logger = Logger.new('/dev/null')
-    RightAws::S3.new(access_key, secret_key, :logger => logger)
+    ::AWS::S3.new(
+      :access_key_id     => access_key,
+      :secret_access_key => secret_key
+    )
   end
 
   # Parse URL and return bucket and key.

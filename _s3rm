@@ -1,6 +1,0 @@
-#!/usr/bin/env ruby
-
-$LOAD_PATH << File.join(File.dirname(__FILE__), 'lib')
-
-load File.join(File.dirname(__FILE__), 'bin', 's3rm')
-

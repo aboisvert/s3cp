@@ -15,6 +15,27 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-module S3CP
-  VERSION = "1.1.0"
+require 's3cp/utils'
+
+# Parse arguments
+options = {}
+
+op = OptionParser.new do |opts|
+  opts.banner = "s3buckets"
+
+  opts.on("--verbose", "Verbose mode") do
+    options[:verbose] = true
+  end
+
+  opts.on_tail("-h", "--help", "Show this message") do
+    puts op
+    exit
+  end
 end
+op.parse!(ARGV)
+
+s3 = S3CP.connect()
+s3.buckets.each do |bucket|
+  puts bucket.name
+end
+

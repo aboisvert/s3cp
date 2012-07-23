@@ -1,7 +1,18 @@
+=== 1.1.0 / (Pending)
+
+* Changed:  Underlying AWS library has been changed from 'right-aws' to the official
+	    AWS SDK ('aws-sdk').   The main driver for this is to stay current on the
+	    latest features, including instance-specific roles, temporary credentials,
+	    etc.
+
+* Added:    New 's3buckets' command displays all S3 buckets associated with the
+	    account.
+
+
 === 1.0.6 / (2012-07-23)
 
 * Fixed:  s3cp would exit with errorlevel 0 despite errors when running in
-          interactive mode.
+	  interactive mode.
 
 === 1.0.5 / (2012-06-25)
 
@@ -15,15 +26,15 @@
 
 * Added:    Exponential backoff for `s3cp` command based on the formula:
 
-              delay = initial_retry_delay * (factor ^ retries)
+	      delay = initial_retry_delay * (factor ^ retries)
 
-            where:
-                    - `initial_retry_delay` is 1 second by default.
-                    - `factor` is 1.4142 by default
-                      (retry delay doubles every two retries)
-                    - max. number of retries is now 20 by default.
+	    where:
+		    - `initial_retry_delay` is 1 second by default.
+		    - `factor` is 1.4142 by default
+		      (retry delay doubles every two retries)
+		    - max. number of retries is now 20 by default.
 
-            (which means s3cp retries for roughly 58 minutes by default)
+	    (which means s3cp retries for roughly 58 minutes by default)
 
 * Fixed:  `s3ls` and `s3du` now properly handle Errno::EPIPE
 
@@ -33,18 +44,18 @@
 
 * Added:  `s3up` now outputs uploaded file size to STDERR, e.g.,
 
-          % ls | s3up s3://bucket/path/to/file
-          s3://bucket/path/to/file => 214B
+	  % ls | s3up s3://bucket/path/to/file
+	  s3://bucket/path/to/file => 214B
 
 === 1.0.1 / 2012-03-9
 
 * Added:  New command `s3up` to upload STDIN to S3
-          e.g. some_cmd | s3up s3://bucket/path/to/destination
+	  e.g. some_cmd | s3up s3://bucket/path/to/destination
 
   Note: `s3up` does not yet directly stream data to S3 since right_aws gem
-        requires the upload size to be known in advance. `s3up` currently
-        persists STDIN into a temp file although this may change in the
-        future.
+	requires the upload size to be known in advance. `s3up` currently
+	persists STDIN into a temp file although this may change in the
+	future.
 
 === 1.0.0 / 2012-03-9
 
@@ -58,27 +69,27 @@ bugs -- but at least all known bugs have been addressed.
 Probably worth mentioning: there are two outstanding experimental features,
 
 1) s3cp --sync:  Does not handle missing files.  It's basically
-                 a faster copy; not a true "sync" at this point.
+		 a faster copy; not a true "sync" at this point.
 
 2) Bash command-line completion is still very rough.
 
 === 0.2.7 / 2012-03-09
 
 * Fixed #3: s3cp adds extra slash when copying to the root of a bucket.
-            e.g. s3://myBucket//someFile or s3://myBucket//someFolderToCopy/someFile
+	    e.g. s3://myBucket//someFile or s3://myBucket//someFolderToCopy/someFile
 
 === 0.2.6 / 2012-03-06
 
 * Fixed:  Possible division-by-zero error in s3du if it encounters
-          zero-length files.
+	  zero-length files.
 
 === 0.2.5 / 2012-03-02
 
 * Added: "s3du" command to calculate disk usage.
-         Supports --depth, --regex, --unit parameters and more!
+	 Supports --depth, --regex, --unit parameters and more!
 
 * Changed: "s3ls -l" command now accepts --unit and --precision to configure
-           file size display.  Uses "smart" unit by default.
+	   file size display.  Uses "smart" unit by default.
 
 * Changed: "s3ls -l" will now use S3CP_DATE_FORMAT environment if set.
 
@@ -120,12 +131,12 @@ Probably worth mentioning: there are two outstanding experimental features,
 * Added: Progress bars during upload/download if $stdout.isatty
 
 * Fixed: s3cat now handles broken pipes properly
-         e.g. "s3cat bucket:some/file | head" will now terminate early.
+	 e.g. "s3cat bucket:some/file | head" will now terminate early.
 
 === 0.2.1 / (2012-02-20)
 
 * Added: Bash completion now supports exclusions through S3CP_EXCLUDES
-         and defaults to excluding keys containing "_$folder$".
+	 and defaults to excluding keys containing "_$folder$".
 
 * Changed: s3dir and s3ls --delimiter now display both directories and files
 
@@ -134,15 +145,15 @@ Probably worth mentioning: there are two outstanding experimental features,
 * Added: s3stat command to display S3 object properties
 
 * Added: s3dir as a shortcut for "s3ls --delimiter / ..."
-         (default to character in S3CP_DELIMITER environment variable or "/" if not defined)
+	 (default to character in S3CP_DELIMITER environment variable or "/" if not defined)
 
 * Added: s3cp defaults can now be set using environment variables
-         S3CP_OVERWRITE, S3CP_CHECKSUM, S3CP_RETRIES, S3CP_RETRY_DELAY
+	 S3CP_OVERWRITE, S3CP_CHECKSUM, S3CP_RETRIES, S3CP_RETRY_DELAY
 
 * Added: Support for Bash command-line completion of S3 URLs (see below).
 
 * Fixed: Skip checksum verification for S3 objects with invalid MD5's
-         (details @ https://forums.aws.amazon.com/message.jspa?messageID=234538)
+	 (details @ https://forums.aws.amazon.com/message.jspa?messageID=234538)
 
 To install Bash completion for S3 URLs, add the following to ~/.bashrc:
 
@@ -153,10 +164,10 @@ To install Bash completion for S3 URLs, add the following to ~/.bashrc:
 === 0.1.15 / (2012-02-17)
 
 * Added: s3cp now automatically checks MD5 checksums during download/upload
-         and retries up to 5 times by default if the checksum fails.
-         The number of attempts may be configured using --max-attempts,
-         the retry delay may be changed with --retry-delay and the check
-         may be disabled completely using --no-checksum.
+	 and retries up to 5 times by default if the checksum fails.
+	 The number of attempts may be configured using --max-attempts,
+	 the retry delay may be changed with --retry-delay and the check
+	 may be disabled completely using --no-checksum.
 
 === 0.1.14 / (2012-02-09)
 
@@ -178,7 +189,7 @@ To install Bash completion for S3 URLs, add the following to ~/.bashrc:
 
 * Fixed: --max-keys now works correctly with --delimiter
 * Fixed: do not display any keys if there are no common-prefix
-         delimiter-matching keys
+	 delimiter-matching keys
 
 === 0.1.9 / (2012-01-23)
 
@@ -187,18 +198,18 @@ To install Bash completion for S3 URLs, add the following to ~/.bashrc:
 === 0.1.8 / (2011-12-29)
 
 * Fixed:  Apparently, File.new(path, File::CREAT|File::WRONLY) does not
-          truncate existing files; use File.new(path, "wb") instead.
+	  truncate existing files; use File.new(path, "wb") instead.
 
 === 0.1.7 / (2011-12-29)
 
 * Fixed:  s3cp would not truncate existing files when overwriting, possibly
-          resulting in corrupted files.
+	  resulting in corrupted files.
 
 === 0.1.6 / (2011-12-16)
 
 * Changed: s3rm now uses multi-object delete operation for faster deletes
 * Changed: dependency on 'aboisvert-aws' instead of 'right-aws' until
-           it supports multi-object delete.
+	   it supports multi-object delete.
 
 === 0.1.5 / 2011-10-17
 
@@ -211,7 +222,7 @@ To install Bash completion for S3 URLs, add the following to ~/.bashrc:
 === 0.1.3 / 2011-09-29
 
 * Fixed:  s3cp --headers names are now converted to lowercase since underlying
-          RightAWS gem expects lowercase header names.
+	  RightAWS gem expects lowercase header names.
 
 === 0.1.2 / 2011-09-29
 
