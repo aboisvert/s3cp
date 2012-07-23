@@ -15,13 +15,8 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-require 'rubygems'
-require 'extensions/kernel' if RUBY_VERSION =~ /1.8/
-require 'right_aws'
-require 'optparse'
-require 'tempfile'
-
 require 's3cp/utils'
+require 'tempfile'
 
 # Parse arguments
 options = {}
@@ -78,7 +73,7 @@ temp.open
 
 # upload temp file
 begin
-  @s3.interface.put(bucket, key, temp, @headers)
+  @s3.buckets[bucket].objects[key].write(temp, :metadata => @headers)
   STDERR.puts "s3://#{bucket}/#{key} => #{S3CP.format_filesize(temp.size)} "
 ensure
   # cleanup
