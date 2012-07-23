@@ -15,13 +15,6 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-require 'rubygems'
-require 'extensions/kernel' if RUBY_VERSION =~ /1.8/
-require 'right_aws'
-require 'optparse'
-require 'date'
-require 'highline/import'
-
 require 's3cp/utils'
 
 # Parse arguments
@@ -72,9 +65,6 @@ fail "Your URL looks funny, doesn't it?" unless @bucket
 
 @s3 = S3CP.connect()
 
-s3_options = Hash.new
-s3_options[:prefix] = @prefix
-
 def depth(path)
   path.count("/")
 end
@@ -103,29 +93,25 @@ def print(key, size)
 end
 
 begin
-  @s3.interface.incrementally_list_bucket(@bucket, s3_options) do |page|
+  @s3.buckets[@bucket].objects.with_prefix(@prefix).each do |entry|
+    key  = entry.key
+    size = entry.content_length
 
-    entries = page[:contents]
-    entries.each do |entry|
-      key  = entry[:key]
-      size = entry[:size]
-
-      if options[:regex].nil? || options[:regex].match(key)
-        current_key = if actual_depth
-          pos = nth_occurrence(key, "/", actual_depth)
-          (pos != -1) ? key[0..pos-1] : key
-        end
-
-        if (last_key && last_key != current_key)
-          print(last_key, subtotal_size)
-          subtotal_size = size
-        else
-          subtotal_size += size
-        end
-
-        last_key = current_key
-        total_size += size
+    if options[:regex].nil? || options[:regex].match(key)
+      current_key = if actual_depth
+        pos = nth_occurrence(key, "/", actual_depth)
+        (pos != -1) ? key[0..pos-1] : key
       end
+
+      if (last_key && last_key != current_key)
+        print(last_key, subtotal_size)
+        subtotal_size = size
+      else
+        subtotal_size += size
+      end
+
+      last_key = current_key
+      total_size += size
     end
   end
 
