@@ -15,10 +15,6 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-require 'rubygems'
-require 'extensions/kernel' if RUBY_VERSION =~ /1.8/
-require 'right_aws'
-require 'optparse'
 require 's3cp/utils'
 
 op = OptionParser.new do |opts|
@@ -48,7 +44,7 @@ end
 
 def update_permissions(s3, bucket, key, permission)
   puts "Setting #{permission} on s3://#{bucket}/#{key}"
-  s3.interface.copy(bucket, key, bucket, key, :replace, {"x-amz-acl" => permission })
+  s3.buckets[bucket].objects[key].acl = permission
 end
 
 source  = ARGV[0]
