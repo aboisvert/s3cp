@@ -291,7 +291,8 @@ def local_to_s3(bucket_to, key, file, options = {})
             p.file_transfer_mode
           end
           class << f
-           attr_accessor :progress_bar
+            attr_accessor :progress_bar
+
             def read(length, buffer=nil)
               begin
                 result = @target.read(length, buffer)
@@ -323,7 +324,12 @@ def local_to_s3(bucket_to, key, file, options = {})
           end
         end
       rescue => e
-        raise e unless options[:checksum]
+        actual_md5 = "bad"
+        if progress_bar
+          progress_bar.clear
+          puts "Error copying #{file} to s3://#{bucket_to}/#{key}"
+        end
+        raise e if !options[:checksum] || e.to_s =~ /Denied/
         STDERR.puts e
       ensure
         f.close()

@@ -1,3 +1,8 @@
+=== 1.0.6 / (2012-07-23)
+
+* Fixed:  s3cp would exit with errorlevel 0 despite errors when running in
+          interactive mode.
+
 === 1.0.5 / (2012-06-25)
 
 * Added:   New command 's3mv' to move files; s3mv is an alias to s3cp --move.
