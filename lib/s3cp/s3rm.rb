@@ -15,13 +15,6 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-require 'rubygems'
-require 'extensions/kernel' if RUBY_VERSION =~ /1.8/
-require 'right_aws'
-require 'optparse'
-require 'date'
-require 'highline/import'
-
 require 's3cp/utils'
 
 # Parse arguments
@@ -110,20 +103,18 @@ exclude_regex = options[:exclude_regex] ? Regexp.new(options[:exclude_regex]) : 
 if options[:recursive]
   matching_keys = []
 
-  @s3.interface.incrementally_list_bucket(@bucket, :prefix => @key) do |page|
-    page[:contents].each do |entry|
-      key = "s3://#{@bucket}/#{entry[:key]}"
+  @s3.buckets[@bucket].objects.with_prefix(@key).each do |entry|
+    key = "s3://#{@bucket}/#{entry.key}"
 
-      matching = true
-      matching = false if include_regex && !include_regex.match(entry[:key])
-      matching = false if exclude_regex && exclude_regex.match(entry[:key])
+    matching = true
+    matching = false if include_regex && !include_regex.match(entry.key)
+    matching = false if exclude_regex && exclude_regex.match(entry.key)
 
-      puts "#{key} => #{matching}" if options[:verbose]
+    puts "#{key} => #{matching}" if options[:verbose]
 
-      if matching
-        matching_keys << entry[:key]
-        puts key unless options[:silent] || options[:verbose]
-      end
+    if matching
+      matching_keys << entry.key
+      puts key unless options[:silent] || options[:verbose]
     end
   end
 
@@ -132,28 +123,20 @@ if options[:recursive]
     exit(1)
   end
 
-  errors = []
-  errors = @s3.interface.delete_multiple(@bucket, matching_keys) unless options[:test]
-
-  if errors.length > 0
-    puts "Errors during deletion:"
-    errors.each do |error|
-      puts "#{error[:key]} #{error[:code]} #{error[:message]}"
-    end
-    exit(1)
-  end
+  # if any of the objects failed to delete, a BatchDeleteError will be raised with a summary of the errors
+  @s3.buckets[@bucket].objects.delete(matching_keys) unless options[:test]
 else
   # delete a single file; check if it exists
-  if options[:fail_if_not_exist] && @s3.interface.head(@bucket, @key) == nil
+  if options[:fail_if_not_exist] && !@s3.buckets[@bucket].objects[@key].exist?
     key = "s3://#{@bucket}/#{@key}"
     puts "#{key} does not exist."
     exit(1)
   end
 
   begin
-    @s3.interface.delete(@bucket, @key) unless options[:test]
+    @s3.buckets[@bucket].objects[@key].delete() unless options[:test]
   rescue => e
     puts e.to_s
-    raise e unless e.to_s =~ /Not Found/
+    raise e unless e.is_a? AWS::S3::Errors::NoSuchKey
   end
 end
