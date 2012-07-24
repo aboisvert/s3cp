@@ -32,6 +32,10 @@ op = OptionParser.new do |opts|
     options[:headers] = h
   end
 
+  opts.on("--acl PERMISSION", "One of 'private', 'authenticated-read', 'public-read', 'public-read-write'") do |permission|
+    options[:acl] = S3CP.validate_acl(permission)
+  end
+
   opts.separator "        e.g.,"
   opts.separator "              HTTP headers: \'Content-Type: image/jpg\'"
   opts.separator "               AMZ headers: \'x-amz-acl: public-read\'"
@@ -75,6 +79,7 @@ temp.open
 begin
   s3_options = {}
   S3CP.set_header_options(s3_options, @headers)
+  s3_options[:acl] = options[:acl]
   @s3.buckets[bucket].objects[key].write(temp, s3_options)
   STDERR.puts "s3://#{bucket}/#{key} => #{S3CP.format_filesize(temp.size)} "
 ensure

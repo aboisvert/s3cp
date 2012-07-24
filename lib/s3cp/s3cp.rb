@@ -94,6 +94,10 @@ op = OptionParser.new do |opts|
     options[:headers] = h
   end
 
+  opts.on("--acl PERMISSION", "One of 'private', 'authenticated-read', 'public-read', 'public-read-write'") do |permission|
+    options[:acl] = S3CP.validate_acl(permission)
+  end
+
   opts.separator "        e.g.,"
   opts.separator "              HTTP headers: \'Content-Type: image/jpg\'"
   opts.separator "               AMZ headers: \'x-amz-acl: public-read\'"
@@ -236,12 +240,13 @@ def s3_to_s3(bucket_from, key, bucket_to, dest, options = {})
   log(with_headers("Copy s3://#{bucket_from}/#{key} to s3://#{bucket_to}/#{dest}"))
   s3_source = @s3.buckets[bucket_from].objects[key]
   s3_dest = @s3.buckets[bucket_to].objects[dest]
-  options = {}
-  S3CP.set_header_options(options, @headers)
+  s3_options = {}
+  S3CP.set_header_options(s3_, @headers)
+  s3_options[:acl] = options[:acl]
   unless options[:move]
-    s3_source.copy_to(s3_dest, options)
+    s3_source.copy_to(s3_dest, s3_options)
   else
-    s3_source.move_to(s3_dest, options)
+    s3_source.move_to(s3_dest, s3_options)
   end
 end
 
@@ -282,7 +287,8 @@ def local_to_s3(bucket_to, key, file, options = {})
           :bucket_name => bucket_to,
           :key => key
         }
-        S3CP.set_header_options(options, @headers)
+        S3CP.set_header_options(s3_options, @headers)
+        s3_options[:acl] = options[:acl]
         s3_options[:content_length] = File.size(file)
 
         progress_bar = ProgressBar.new(File.basename(file), File.size(file)).tap do |p|

@@ -28,6 +28,15 @@ module S3CP
   # Valid units for file size formatting
   UNITS = %w{B KB MB GB TB EB ZB YB BB}
 
+  LEGAL_MODS = %w{
+    private
+    public-read
+    public-read-write
+    authenticated-read
+    bucket_owner_read
+    bucket_owner_full_control
+  }
+
   # Connect to AWS S3
   def connect()
     access_key = ENV["AWS_ACCESS_KEY_ID"]     || raise("Missing environment variable AWS_ACCESS_KEY_ID")
@@ -140,6 +149,13 @@ module S3CP
     options[:metadata] = remaining unless remaining.empty?
 
     options
+  end
+
+  def validate_acl(permission)
+    if !LEGAL_MODS.include?(permission)
+      raise "Permissions must be one of the following values: #{LEGAL_MODS}"
+    end
+    permission
   end
 end
 

@@ -48,10 +48,7 @@ def update_permissions(s3, bucket, key, permission)
 end
 
 source  = ARGV[0]
-permission = ARGV.last
-
-LEGAL_MODS = %w{private authenticated-read public-read public-read-write}
-raise "Permissions must be one of the following values: #{LEGAL_MODS}" unless LEGAL_MODS.include?(permission)
+permission = S3CP.validate_acl(ARGV.last)
 
 @s3 = S3CP.connect()
 bucket,key = S3CP.bucket_and_key(source)
