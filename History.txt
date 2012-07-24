@@ -8,6 +8,7 @@
 * Added:    New 's3buckets' command displays all S3 buckets associated with the
 	    account.
 
+* Added:    New '--acl PERMISSION' option to 's3cp' and 's3up' commands.
 
 === 1.0.6 / (2012-07-23)
 
