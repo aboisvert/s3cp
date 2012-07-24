@@ -73,7 +73,9 @@ temp.open
 
 # upload temp file
 begin
-  @s3.buckets[bucket].objects[key].write(temp, :metadata => @headers)
+  s3_options = {}
+  S3CP.set_header_options(s3_options, @headers)
+  @s3.buckets[bucket].objects[key].write(temp, s3_options)
   STDERR.puts "s3://#{bucket}/#{key} => #{S3CP.format_filesize(temp.size)} "
 ensure
   # cleanup

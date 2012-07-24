@@ -237,7 +237,7 @@ def s3_to_s3(bucket_from, key, bucket_to, dest, options = {})
   s3_source = @s3.buckets[bucket_from].objects[key]
   s3_dest = @s3.buckets[bucket_to].objects[dest]
   options = {}
-  options[:metadata] = @headers if @headers
+  S3CP.set_header_options(options, @headers)
   unless options[:move]
     s3_source.copy_to(s3_dest, options)
   else
@@ -282,7 +282,7 @@ def local_to_s3(bucket_to, key, file, options = {})
           :bucket_name => bucket_to,
           :key => key
         }
-        s3_options[:metadata] = @headers if @headers
+        S3CP.set_header_options(options, @headers)
         s3_options[:content_length] = File.size(file)
 
         progress_bar = ProgressBar.new(File.basename(file), File.size(file)).tap do |p|
@@ -435,8 +435,7 @@ def key_path(prefix, key)
 end
 
 def s3_size(bucket, key)
-  metadata = @s3.buckets[bucket].objects[key].head()
-  metadata[:content_length].to_i
+  @s3.buckets[bucket].objects[key].content_length
 end
 
 def copy(from, to, options)

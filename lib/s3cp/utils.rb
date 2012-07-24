@@ -108,6 +108,39 @@ module S3CP
       s + UNITS[e]
     end
   end
+
+  def set_header_options(options, headers)
+    return options unless headers
+
+    # legacy options that were previously passed as headers
+    # are now passed explicitly as options/metadata.
+    mappings = {
+      "Content-Type"  =>  :content_type,
+      "x-amz-acl"     =>  :acl,
+      "Cache-Control" =>  :cache_control,
+      "x-amz-storage-class" => :reduced_redundancy
+    }
+
+    lambdas = {
+      "x-amz-storage-class" => lambda { |v| (v =~ /^REDUCED_REDUNDANCY$/i) ? true : false }
+    }
+
+    remaining = headers.dup
+    headers.each do |hk, hv|
+      mappings.each do |mk, mv|
+        if hk.to_s =~ /^#{mk}$/i
+          lambda = lambdas[mk]
+          options[mv] = lambda ? lambda.call(hv) : hv
+          remaining.delete(hk)
+        end
+      end
+    end
+
+
+    options[:metadata] = remaining unless remaining.empty?
+
+    options
+  end
 end
 
 # Monkey-patch S3 object for download streaming

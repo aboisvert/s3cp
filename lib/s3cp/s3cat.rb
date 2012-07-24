@@ -61,8 +61,7 @@ fail "Your URL looks funny, doesn't it?" unless @bucket
 
 if options[:tty]
   # store contents to file to display with PAGER
-  metadata = @s3.objects[@prefix].head
-  size = metadata[:content_length].to_i
+  size = @s3.objects[@prefix].content_length
 
   progress_bar = ProgressBar.new(File.basename(@prefix), size).tap do |p|
     p.file_transfer_mode
