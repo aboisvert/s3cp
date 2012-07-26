@@ -119,6 +119,11 @@ op = OptionParser.new do |opts|
     options[:debug] = true
   end
 
+  opts.on("--version", "Display version information") do
+    puts S3CP::VERSION
+    exit
+  end
+
   opts.on_tail("-h", "--help", "Show this message") do
     puts op
     exit

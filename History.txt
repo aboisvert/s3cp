@@ -1,5 +1,7 @@
 === 1.1.0.pre.2 / (Pending)
 
+* Added:    's3cp --version' now reports version information.
+
 === 1.1.0.pre.1 / (2012-07-23)
 
 * Changed:  Underlying AWS library has been changed from 'right-aws' to the official
