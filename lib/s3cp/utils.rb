@@ -39,13 +39,7 @@ module S3CP
 
   # Connect to AWS S3
   def connect()
-    access_key = ENV["AWS_ACCESS_KEY_ID"]     || raise("Missing environment variable AWS_ACCESS_KEY_ID")
-    secret_key = ENV["AWS_SECRET_ACCESS_KEY"] || raise("Missing environment variable AWS_SECRET_ACCESS_KEY")
-
-    ::AWS::S3.new(
-      :access_key_id     => access_key,
-      :secret_access_key => secret_key
-    )
+    ::AWS::S3.new()
   end
 
   # Parse URL and return bucket and key.
