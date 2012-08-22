@@ -1,3 +1,7 @@
+=== 1.1.0.pre.4 / (2012-08-22)
+
+* Fixed:    s3dir was not correctly displaying directories
+
 === 1.1.0.pre.3 / (2012-08-22)
 
 * Fixed:    s3cp >5GB file uploads (Peter Tan)
