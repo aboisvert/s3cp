@@ -155,18 +155,25 @@ if options[:debug]
   puts "Options: \n#{options.inspect}"
 end
 
-class Proxy
+class ProxyIO
   instance_methods.each { |m| undef_method m unless m =~ /(^__|^send$|^object_id$)/ }
 
-  def initialize(target)
-    @target = target
+  def initialize(io, progress_bar)
+    @io = io
+    @progress_bar = progress_bar
+  end
+
+  def read(size)
+    result = @io.read(size)
+    @progress_bar.inc result.length if result
+    result
   end
 
   protected
 
   def method_missing(name, *args, &block)
-    #puts "method_missing! #{name} #{args.inspect}"
-    @target.send(name, *args, &block)
+    #puts "ProxyIO method_missing! #{name} #{args.inspect}"
+    @io.send(name, *args, &block)
   end
 end
 
@@ -288,10 +295,7 @@ def local_to_s3(bucket_to, key, file, options = {})
       end
 
       begin
-        s3_options = {
-          :bucket_name => bucket_to,
-          :key => key
-        }
+        s3_options = {}
         S3CP.set_header_options(s3_options, @headers)
         s3_options[:acl] = options[:acl]
         s3_options[:content_length] = File.size(file)
@@ -300,14 +304,9 @@ def local_to_s3(bucket_to, key, file, options = {})
           p.file_transfer_mode
         end
 
-        meta = @s3.client.put_object(s3_options) do |buffer|
-          File.open(file) do |io|
-            while !io.eof?
-              result = io.read(32 * 1024)
-              progress_bar.inc result.length if result
-              buffer.write(result)
-            end
-          end
+        File.open(file) do |io|
+          obj = @s3.buckets[bucket_to].objects[key]
+          obj.write(ProxyIO.new(io, progress_bar), s3_options)
         end
 
         progress_bar.finish if progress_bar
