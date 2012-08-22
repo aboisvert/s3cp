@@ -1,3 +1,9 @@
+=== 1.1.0.pre.3 / (2012-08-22)
+
+* Fixed:    s3cp >5GB file uploads (Peter Tan)
+
+* Changed:  Updated aws-sdk dependency to ~> 1.6.3
+
 === 1.1.0.pre.2 / (2012-08-08)
 
 * Added:    's3cp --version' now reports version information.
