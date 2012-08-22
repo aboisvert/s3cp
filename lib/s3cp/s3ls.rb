@@ -90,10 +90,17 @@ end
 
 keys = 0
 rows = 0
+directories = true
 
 begin
   display = lambda do |entry|
-    key = entry.key ? "s3://#{@bucket}/#{entry.key}" : "---"
+    # add '---' separator line between directories and files
+    if options[:delimiter] && directories && entry.is_a?(AWS::S3::Tree::LeafNode)
+      directories = false
+      puts "---"
+    end
+
+    key = "s3://#{@bucket}/#{entry.respond_to?(:key) ? entry.key : entry.prefix}"
     if options[:long_format] && entry.last_modified && entry.content_length
       size = entry.content_length
       size = S3CP.format_filesize(size, :unit => options[:unit], :precision => options[:precision])
@@ -104,21 +111,19 @@ begin
     end
     rows += 1
     keys += 1
+    response = ''
     if options[:rows_per_page] && (rows % options[:rows_per_page] == 0)
       begin
         print "Continue? (Y/n) "
         response = STDIN.gets.chomp.downcase
       end until response == 'n' || response == 'y' || response == ''
-      exit if response == 'n'
     end
+    (response == 'n')
   end
 
   if options[:delimiter]
     @s3.objects.with_prefix(@key).as_tree(:delimier => options[:delimiter], :append => false).children.each do |entry|
-      if entry.leaf?
-        entry = @s3.objects[entry.key]
-        break if display.call(entry)
-      end
+      break if display.call(entry)
     end
   else
     s3_options = Hash.new
