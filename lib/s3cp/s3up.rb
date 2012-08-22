@@ -15,6 +15,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
+require 's3cp/version'
 require 's3cp/utils'
 require 'tempfile'
 
