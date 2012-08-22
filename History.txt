@@ -1,3 +1,7 @@
+=== 1.1.1 / (2012-08-22)
+
+* Fixed: Invalid break (SyntaxError) in s3ls.
+
 === 1.1.0 / (2012-08-22)
 
 * First stable release using the aws-sdk gem.  No changes from 1.1.0.pre.4.
