@@ -134,6 +134,5 @@ begin
   end
 rescue Errno::EPIPE
   # ignore
-  break
 end
 
