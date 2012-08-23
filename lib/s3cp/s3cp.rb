@@ -188,12 +188,7 @@ end
 @includes = options[:include_regex].map { |s| Regexp.new(s) }
 @excludes = options[:exclude_regex].map { |s| Regexp.new(s) }
 
-def match(path)
-  matching = true
-  return false if @includes.any? && !@includes.any? { |regex| regex.match(path) }
-  return false if @excludes.any? &&  @excludes.any? { |regex| regex.match(path) }
-  true
-end
+S3CP.load_config()
 
 @s3 = S3CP.connect()
 
@@ -207,6 +202,13 @@ def direction(from, to)
   else
     :local_to_local
   end
+end
+
+def match(path)
+  matching = true
+  return false if @includes.any? && !@includes.any? { |regex| regex.match(path) }
+  return false if @excludes.any? &&  @excludes.any? { |regex| regex.match(path) }
+  true
 end
 
 def no_slash(path)

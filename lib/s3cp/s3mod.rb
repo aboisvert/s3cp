@@ -50,6 +50,8 @@ end
 source  = ARGV[0]
 permission = S3CP.validate_acl(ARGV.last)
 
+S3CP.load_config()
+
 @s3 = S3CP.connect()
 bucket,key = S3CP.bucket_and_key(source)
 update_permissions(@s3, bucket, key, permission)

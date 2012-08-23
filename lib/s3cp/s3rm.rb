@@ -98,6 +98,8 @@ end
 include_regex = options[:include_regex] ? Regexp.new(options[:include_regex]) : nil
 exclude_regex = options[:exclude_regex] ? Regexp.new(options[:exclude_regex]) : nil
 
+S3CP.load_config()
+
 @s3 = S3CP.connect()
 
 if options[:recursive]

@@ -1,3 +1,13 @@
+=== 1.1.2 / (2012-08-22)
+
+* Added:   All commands now execute an init script ($HOME/.s3cp by default,
+           or $S3CP_CONFIG if defined) allowing customization, such as
+           setting up the AWS.config parameters such as S3 endpoints, max retries,
+           credentials, etc.
+
+           See http://docs.amazonwebservices.com/AWSRubySDK/latest/AWS.html#config-class_method
+           for details.
+
 === 1.1.1 / (2012-08-22)
 
 * Fixed: Invalid break (SyntaxError) in s3ls.

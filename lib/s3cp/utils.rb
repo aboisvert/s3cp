@@ -21,6 +21,7 @@ require 'aws/s3'
 require 'optparse'
 require 'date'
 require 'highline/import'
+require 's3cp/version'
 
 module S3CP
   extend self
@@ -40,6 +41,15 @@ module S3CP
   # Connect to AWS S3
   def connect()
     ::AWS::S3.new()
+  end
+
+  # Load user-defined configuration file (e.g. to initialize AWS.config object)
+  def load_config()
+    aws_config = File.join(ENV['HOME'], '.s3cp')
+    aws_config = ENV['S3CP_CONFIG'] if ENV['S3CP_CONFIG']
+    if File.exist?(aws_config)
+      load aws_config
+    end
   end
 
   # Parse URL and return bucket and key.

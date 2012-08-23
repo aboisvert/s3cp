@@ -61,6 +61,8 @@ url = ARGV[0]
 bucket, key = S3CP.bucket_and_key(url)
 fail "Your URL looks funny, doesn't it?" unless bucket
 
+S3CP.load_config()
+
 @s3 = S3CP.connect()
 
 # copy all of STDIN to a temp file

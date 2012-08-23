@@ -40,6 +40,8 @@ arg2  = ARGV[2]
 
 DEBUG = true
 
+S3CP.load_config()
+
 @s3 = S3CP.connect()
 
 if DEBUG

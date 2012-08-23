@@ -34,6 +34,8 @@ op = OptionParser.new do |opts|
 end
 op.parse!(ARGV)
 
+S3CP.load_config()
+
 s3 = S3CP.connect()
 s3.buckets.each do |bucket|
   puts bucket.name

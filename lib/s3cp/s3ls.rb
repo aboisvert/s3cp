@@ -86,6 +86,8 @@ if options[:verbose]
   puts "key #{@key}"
 end
 
+S3CP.load_config()
+
 @s3 = S3CP.connect().buckets[@bucket]
 
 keys = 0

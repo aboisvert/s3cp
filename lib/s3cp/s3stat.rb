@@ -37,6 +37,10 @@ source  = ARGV[0]
 permission = ARGV.last
 
 @bucket, @key = S3CP.bucket_and_key(source)
+fail "Your URL looks funny, doesn't it?" unless @bucket
+
+S3CP.load_config()
+
 @s3 = S3CP.connect().buckets[@bucket]
 
 metadata = @s3.objects[@key].head
