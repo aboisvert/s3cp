@@ -44,6 +44,7 @@ Gem::Specification.new do |s|
                    %w{History.txt README.md} +
                    Dir.glob("bin/*")
 
+  s.executables << 's3buckets'
   s.executables << 's3cat'
   s.executables << 's3cp'
   s.executables << 's3cp_complete'
