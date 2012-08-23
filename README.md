@@ -9,17 +9,6 @@ Make sure you have Rubygems installed on your system then run:
 
     # gem install s3cp
 
-### Building ###
-
-If you want to hack on s3cp and build the gem yourself, you will need Bundler (http://gembundler.com/) installed.  Here is a typical development setup:
-
-    # git clone git@github.com:aboisvert/s3cp.git
-    # cd s3cp
-    (... hack on s3cp ...)
-    # bundle install
-    # bundle exec rake gem
-    # gem install s3cp-*.gem
-
 ### Examples ###
 
     export AWS_ACCESS_KEY_ID=...
@@ -39,13 +28,15 @@ All commands support both `s3://bucket/path/to/file` and the legacy `bucket:path
 
 Commands are also TTY-aware;  when run in an interactive shell, their behavior will change.  For example, `s3cat` will launch your favorite `PAGER` or `less` (the default pager) whereas `s3ls` will display N items at a time, where N is the number of display lines on your terminal and pause between pages.
 
-### Bash completion for S3 URLs ###
+### Security / Credentials ###
 
-To install Bash completion for S3 URLs, add the following to ~/.bashrc:
+Starting with v1.1.0, S3CP uses the default credential provider from the aws-sdk which makes a best effort to locate your AWS credentials.  It checks a variety of locations in the following order:
 
-    for cmd in [ s3cat s3cp s3dir s3ls s3mod s3rm s3stat ]; do
-      complete -C s3cp_complete $cmd
-    done
+* Static credentials from AWS.config (e.g. AWS.config.access_key_id, AWS.config.secret_access_key)
+
+* The environment (e.g. ENV['AWS_ACCESS_KEY_ID'] or ENV['AMAZON_ACCESS_KEY_ID'])
+
+* EC2 metadata service (checks for credentials provided by roles for instances).
 
 ### Usage ###
 
@@ -139,15 +130,35 @@ To install Bash completion for S3 URLs, add the following to ~/.bashrc:
         --verbose                    Verbose mode
     -h, --help                       Show this message
 
+### Bash completion for S3 URLs ###
+
+To install Bash completion for S3 URLs, add the following to ~/.bashrc:
+
+    for cmd in [ s3cat s3cp s3dir s3ls s3mod s3rm s3stat ]; do
+      complete -C s3cp_complete $cmd
+    done
+
 ### Dependencies ###
 
-* highline `>=1.5.1`  (console/terminal size guessing)
-* right_aws `=2.1.0`  (underlying Amazon S3 API)
-* right_http_connection `=1.3.0` (required by `right_aws`)
+* extensions '~> 0.6'     (portability between Ruby 1.8.7/1.9.2)
+* highline `>=1.5.1`      (console/terminal size guessing)
+* aws-sdk '~> 1.6.3'      (underlying Amazon S3 API)
+* progressbar '~> 0.10.0' (nice console progress output)
 
 ### Target platform ###
 
 * Ruby 1.8.7 / 1.9.2
+
+### Development ###
+
+If you want to hack on s3cp and build the gem yourself, you will need Bundler (http://gembundler.com/) installed.  Here is a typical development setup:
+
+    # git clone git@github.com:aboisvert/s3cp.git
+    # cd s3cp
+    # bundle install
+    (... hack on s3cp ...)
+    # bundle exec rake gem
+    # gem install s3cp-*.gem
 
 ### License ###
 
