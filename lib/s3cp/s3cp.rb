@@ -255,7 +255,7 @@ def s3_to_s3(bucket_from, key, bucket_to, dest, options = {})
   s3_source = @s3.buckets[bucket_from].objects[key]
   s3_dest = @s3.buckets[bucket_to].objects[dest]
   s3_options = {}
-  S3CP.set_header_options(s3_, @headers)
+  S3CP.set_header_options(s3_options, @headers)
   s3_options[:acl] = options[:acl]
   unless options[:move]
     s3_source.copy_to(s3_dest, s3_options)
