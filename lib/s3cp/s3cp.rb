@@ -458,8 +458,8 @@ def copy(from, to, options)
   when :s3_to_s3
     if options[:recursive]
       keys = []
-      @s3.interface.incrementally_list_bucket(bucket_from, :prefix => key_from) do |page|
-        page[:contents].each { |entry| keys << entry[:key] }
+      @s3.buckets[bucket_from].objects.with_prefix(key_from).each do |entry|
+        keys << entry.key
       end
       keys.each do |key|
         if match(key)
@@ -488,8 +488,8 @@ def copy(from, to, options)
   when :s3_to_local
     if options[:recursive]
       keys = []
-      @s3.interface.incrementally_list_bucket(bucket_from, :prefix => key_from) do |page|
-        page[:contents].each { |entry| keys << entry[:key] }
+      @s3.buckets[bucket_from].objects.with_prefix(key_from).each do |entry|
+        keys << entry.key
       end
       keys.each do |key|
         if match(key)
