@@ -1,4 +1,11 @@
-=== 1.1.3 (Pending)
+=== 1.1.4 (2012-09-11)
+
+* Fixed:  Command-line completion that was broken since 1.1.0 (after aws-sdk migration)
+
+* Fixed:  s3-to-s3 copy that was broken since 1.1.0 (after aws-sdk migration)
+
+
+=== 1.1.3 (2012-09-05)
 
 * Fixed:   s3-to-s3 copy command failed with error message:
            `s3_to_s3': undefined local variable or method `s3_' for #<Object:0x7f333b239298> (NameError)
