@@ -2,7 +2,7 @@
 
 * Fixed:  Command-line completion that was broken since 1.1.0 (after aws-sdk migration)
 
-* Fixed:  s3-to-s3 copy that was broken since 1.1.0 (after aws-sdk migration)
+* Fixed:  Recursive s3-to-s3 copy that was broken since 1.1.0 (after aws-sdk migration)
 
 
 === 1.1.3 (2012-09-05)
