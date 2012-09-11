@@ -15,15 +15,8 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-require 'rubygems'
-require 'extensions/kernel' if RUBY_VERSION =~ /1.8/
-require 'right_aws'
-require 'optparse'
-require 'date'
-require 'highline/import'
-require 'tempfile'
-
 require 's3cp/utils'
+require 'tempfile'
 
 cmd_line = ENV['COMP_LINE']
 position = ENV['COMP_POINT'].to_i
@@ -115,13 +108,11 @@ if (prefix && prefix.length > 0) || (url =~ /s3\:\/\/[^\/]+\//) || (url =~ /\:$/
 
   # try directory first
   dir_options = Hash.new
-  dir_options[:prefix] = prefix
   dir_options[:delimiter] = delimiter
   begin
-    @s3.interface.incrementally_list_bucket(bucket, dir_options) do |page|
-      entries = page[:common_prefixes]
-      entries << page[:contents][0][:key] if page[:contents].length > 0 && entries.length > 0
-      result = entries
+    result = []
+    @s3.buckets[bucket_from].objects.with_prefix(prefix).as_tree(:delimier => options[:delimiter], :append => false).children.each do |entry|
+      result << entry.key
     end
   rescue => e
     debug "exception #{e}"
@@ -137,22 +128,18 @@ if (prefix && prefix.length > 0) || (url =~ /s3\:\/\/[^\/]+\//) || (url =~ /\:$/
   # there may be longer matches
   if (result.size == 0) || (result.size == 1)
     prefix = result[0] if result.size == 1
-    file_options = Hash.new
-    file_options[:prefix] = prefix
-    file_options["max-keys"] = 100
+    s3_options = Hash.new
+    s3_options[:limit] = 1000
     short_keys = Hash.new
     all_keys = []
     begin
-      @s3.interface.incrementally_list_bucket(bucket, file_options) do |page|
-        entries = page[:contents]
-        entries.each do |entry|
-          key = entry[:key]
-          pos = prefix.length-1
-          pos += 1 while pos+1 < key.length && key[pos+1].chr == delimiter
-          short_key = key[0..pos]
-          short_keys[short_key] = key
-          all_keys << key
-        end
+      @s3.buckets[bucket].objects.with_prefix(prefix).each(s3_options) do |entry|
+        key = entry.key
+        pos = prefix.length-1
+        pos += 1 while pos+1 < key.length && key[pos+1].chr == delimiter
+        short_key = key[0..pos]
+        short_keys[short_key] = key
+        all_keys << key
       end
     rescue => e
       debug "exception #{e}"
@@ -173,8 +160,7 @@ else
   # complete bucket name
   bucket ||= url
   begin
-    buckets = @s3.interface.list_all_my_buckets()
-    bucket_names = buckets.map { |b| b[:name] }
+    bucket_names = @s3.buckets.to_a.map(&:name)
     matching = bucket_names.select { |b| b =~ /^#{bucket}/ }
     print_buckets(matching)
   rescue => e
