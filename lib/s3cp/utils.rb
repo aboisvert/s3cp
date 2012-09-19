@@ -40,7 +40,17 @@ module S3CP
 
   # Connect to AWS S3
   def connect()
-    ::AWS::S3.new()
+    options = {}
+
+    # optional region override
+    region = ENV["S3CP_REGION"]
+    options[:s3_endpoint] = "s3-#{region}.amazonaws.com" if region && region != "us-east-1"
+
+    # optional endpoint override
+    endpoint = ENV["S3CP_ENDPOINT"]
+    options[:s3_endpoint] = endpoint if endpoint
+
+    ::AWS::S3.new(options)
   end
 
   # Load user-defined configuration file (e.g. to initialize AWS.config object)

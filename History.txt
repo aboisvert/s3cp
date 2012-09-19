@@ -1,3 +1,21 @@
+=== 1.1.5 (2012-09-19)
+
+* Added:  It's now possible to specify a bucket's AWS region using the S3CP_REGION
+          environment variable, e.g.,
+
+          % S3CP_REGION=eu-west-1 s3ls my-eu-bucket:prefix/
+
+          or for a shell session,
+
+          % export S3CP_REGION=eu-west-1
+          % s3ls my-eu-bucket:prefix/
+
+          Similarly, it is possible to specify a fully-qualified endpoint using
+          the S3CP_ENDPOINT environment variable:
+
+          % S3CP_ENDPOINT=s3-eu-west-1.amazonaws.com
+          % s3ls my-eu-bucket:prefix/
+
 === 1.1.4 (2012-09-11)
 
 * Fixed:  Command-line completion that was broken since 1.1.0 (after aws-sdk migration)
