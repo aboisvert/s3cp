@@ -55,9 +55,9 @@ module S3CP
 
   # Load user-defined configuration file (e.g. to initialize AWS.config object)
   def load_config()
-    aws_config = File.join(ENV['HOME'], '.s3cp')
+    aws_config = File.join(ENV['HOME'], '.s3cp') if ENV['HOME']
     aws_config = ENV['S3CP_CONFIG'] if ENV['S3CP_CONFIG']
-    if File.exist?(aws_config)
+    if aws_config && File.exist?(aws_config)
       load aws_config
     end
   end

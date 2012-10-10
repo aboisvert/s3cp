@@ -1,3 +1,8 @@
+=== 1.1.6 (2012-10-09)
+
+* Fixed:  Potential error: utils.rb:58:in `join': can't convert nil into String (TypeError)
+          if HOME environment variable was nil.
+
 === 1.1.5 (2012-09-19)
 
 * Added:  It's now possible to specify a bucket's AWS region using the S3CP_REGION
