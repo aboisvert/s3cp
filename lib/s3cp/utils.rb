@@ -22,6 +22,7 @@ require 'optparse'
 require 'date'
 require 'highline/import'
 require 's3cp/version'
+require 'fileutils'
 
 module S3CP
   extend self
