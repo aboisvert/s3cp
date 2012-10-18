@@ -1,3 +1,8 @@
+=== 1.1.7 (2012-10-17)
+
+* Fixed:  s3cp -r (recursive) would fail with "uninitialized constant FileUtils (NameError)"
+          if destination directory didn't exist.
+
 === 1.1.6 (2012-10-09)
 
 * Fixed:  Potential error: utils.rb:58:in `join': can't convert nil into String (TypeError)
