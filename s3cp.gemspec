@@ -33,7 +33,7 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = ">= 1.3.6"
 
   s.add_dependency("extensions", ["~> 0.6"])
-  s.add_dependency("highline", ["~> 1.5.1"])
+  s.add_dependency("highline", [">= 1.5.1"])
   s.add_dependency("aws-sdk", ["~> 1.6.3"])
   s.add_dependency("progressbar", ["~> 0.10.0"])
 

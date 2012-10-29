@@ -1,3 +1,8 @@
+=== 1.1.8 (2012-10-29)
+
+* Changed:  Relaxed highline dependency requirement from ~> 1.5.1 to >= 1.5.1
+            (for better compatibility with other gems, e.g., capistrano)
+
 === 1.1.7 (2012-10-17)
 
 * Fixed:  s3cp -r (recursive) would fail with "uninitialized constant FileUtils (NameError)"
