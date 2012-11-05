@@ -250,8 +250,15 @@ def md5(filename)
   digest.hexdigest
 end
 
+def operation(options)
+  operation = "Copy"
+  operation = "Move" if options[:move]
+  operation = "Sync" if options[:sync]
+  operation
+end
+
 def s3_to_s3(bucket_from, key, bucket_to, dest, options = {})
-  log(with_headers("Copy s3://#{bucket_from}/#{key} to s3://#{bucket_to}/#{dest}"))
+  log(with_headers("#{operation(options)} s3://#{bucket_from}/#{key} to s3://#{bucket_to}/#{dest}"))
   s3_source = @s3.buckets[bucket_from].objects[key]
   s3_dest = @s3.buckets[bucket_to].objects[dest]
   s3_options = {}
@@ -265,7 +272,7 @@ def s3_to_s3(bucket_from, key, bucket_to, dest, options = {})
 end
 
 def local_to_s3(bucket_to, key, file, options = {})
-  log(with_headers("Copy #{file} to s3://#{bucket_to}/#{key}"))
+  log(with_headers("#{operation(options)} #{file} to s3://#{bucket_to}/#{key}"))
 
   expected_md5 = if options[:checksum] || options[:sync]
      md5(file)
@@ -342,7 +349,7 @@ def local_to_s3(bucket_to, key, file, options = {})
 end
 
 def s3_to_local(bucket_from, key_from, dest, options = {})
-  log("Copy s3://#{bucket_from}/#{key_from} to #{dest}")
+  log("#{operation(options)} s3://#{bucket_from}/#{key_from} to #{dest}")
 
   retries = 0
   begin
