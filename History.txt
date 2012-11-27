@@ -1,6 +1,7 @@
-=== 1.1.9 (Pending)
+=== 1.1.9 (2012-11-27)
 
-* Change:  Correctly display 'Move' text instead of 'Copy' when moving files.
+* Added:   New `s3tree` command similar to Unix `tree` command.
+* Changed: Correctly display 'Move' text instead of 'Copy' when moving files.
 
 === 1.1.8 (2012-10-29)
 
