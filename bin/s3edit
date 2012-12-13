@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+ARGV.unshift "--edit"
+require 's3cp/s3cat'
+

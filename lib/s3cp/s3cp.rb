@@ -237,19 +237,6 @@ def with_headers(msg)
   msg
 end
 
-def md5(filename)
-  digest = Digest::MD5.new()
-  file = File.open(filename, 'r')
-  begin
-    file.each_line do |line|
-      digest << line
-    end
-  ensure
-    file.close()
-  end
-  digest.hexdigest
-end
-
 def operation(options)
   operation = "Copy"
   operation = "Move" if options[:move]
@@ -275,7 +262,7 @@ def local_to_s3(bucket_to, key, file, options = {})
   log(with_headers("#{operation(options)} #{file} to s3://#{bucket_to}/#{key}"))
 
   expected_md5 = if options[:checksum] || options[:sync]
-     md5(file)
+     S3CP.md5(file)
   end
 
   actual_md5 = if options[:sync]
@@ -378,7 +365,7 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
       end
 
       actual_md5 = if options[:sync] && File.exist?(dest)
-         md5(dest)
+         S3CP.md5(dest)
       end
 
       if !options[:sync] || (expected_md5 != actual_md5)
@@ -411,14 +398,14 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
     end
 
     if options[:checksum] && expected_md5 != nil
-      actual_md5 = md5(dest)
+      actual_md5 = S3CP.md5(dest)
       if actual_md5 != expected_md5
         STDERR.puts "Warning: invalid MD5 checksum.  Expected: #{expected_md5} Actual: #{actual_md5}"
       end
     end
 
     retries += 1
-  end until options[:checksum] == false || expected_md5.nil? || md5(dest) == expected_md5
+  end until options[:checksum] == false || expected_md5.nil? || S3CP.md5(dest) == expected_md5
 
   @s3.buckets[bucket_from].objects[key_from].delete() if options[:move]
 end

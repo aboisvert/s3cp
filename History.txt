@@ -1,3 +1,8 @@
+=== 1.1.10 (2012-12-13)
+
+* Added:   New `s3edit` command for easy editing of files.
+           Basically s3cp file locally, launch $EDITOR and s3cp file back to S3.
+
 === 1.1.9 (2012-11-27)
 
 * Added:   New `s3tree` command similar to Unix `tree` command.

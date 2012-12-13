@@ -35,6 +35,10 @@ op = OptionParser.new do |opts|
     options[:tty] = tty
   end
 
+  opts.on("--edit", "Edit mode") do |edit|
+    options[:edit] = edit
+  end
+
   opts.on_tail("-h", "--help", "Show this message") do
     puts op
     exit
@@ -61,7 +65,7 @@ S3CP.load_config()
 
 @s3 = S3CP.connect().buckets[@bucket]
 
-if options[:tty]
+if options[:tty] || options[:edit]
   # store contents to file to display with PAGER
   size = @s3.objects[@prefix].content_length
 
@@ -69,7 +73,7 @@ if options[:tty]
     p.file_transfer_mode
   end
 
-  file = Tempfile.new('s3cat')
+  file = Tempfile.new(File.basename(@prefix) + '_')
   out = File.new(file.path, "wb")
   begin
     @s3.objects[@prefix].read_as_stream do |chunk|
@@ -80,7 +84,24 @@ if options[:tty]
   ensure
     out.close()
   end
-  exec "#{ENV['PAGER'] || 'less'} #{file.path}"
+  if options[:edit]
+    before_md5 = S3CP.md5(file.path)
+    system "#{ENV['EDITOR'] || 'vi'} #{file.path}"
+    if ($? == 0)
+      if (S3CP.md5(file.path) != before_md5)
+        ARGV.clear
+        ARGV << file.path
+        ARGV << url
+        load "s3cp/s3cp.rb"
+      else
+        puts "File unchanged."
+      end
+    else
+      puts "Edit aborted (result code #{$?})."
+    end
+  else
+    system "#{ENV['PAGER'] || 'less'} #{file.path}"
+  end
   file.delete()
 else
   @s3.objects[@prefix].read_as_stream do |chunk|

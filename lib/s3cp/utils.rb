@@ -96,6 +96,20 @@ module S3CP
     (n * (10.0 ** decimals)).round * (10.0 ** (-decimals))
   end
 
+  # Calculate the MD5 checksum for the given file
+  def md5(filename)
+    digest = Digest::MD5.new()
+    file = File.open(filename, 'r')
+    begin
+      file.each_line do |line|
+        digest << line
+      end
+    ensure
+      file.close()
+    end
+    digest.hexdigest
+  end
+
   # Return a formatted string for a file size.
   #
   # Valid units are "b" (bytes), "kb" (kilobytes), "mb" (megabytes),
