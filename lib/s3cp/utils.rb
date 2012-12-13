@@ -211,3 +211,17 @@ module AWS
   end
 end
 
+# Monkey-patch to add requester-pays support (experimental)
+# http://docs.amazonwebservices.com/AmazonS3/latest/dev/ObjectsinRequesterPaysBuckets.html
+if ENV["S3CP_REQUESTER_PAYS"] =~ /(yes|on|1)/i
+  class AWS::S3::Request
+    def canonicalized_headers
+      headers["x-amz-request-payer"] = 'requester' # magic!
+      x_amz = headers.select{|name, value| name.to_s =~ /^x-amz-/i }
+      x_amz = x_amz.collect{|name, value| [name.downcase, value] }
+      x_amz = x_amz.sort_by{|name, value| name }
+      x_amz = x_amz.collect{|name, value| "#{name}:#{value}" }.join("\n")
+      x_amz == '' ? nil : x_amz
+    end
+  end
+end
