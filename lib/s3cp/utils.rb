@@ -156,6 +156,7 @@ module S3CP
       "Content-Type"  =>  :content_type,
       "x-amz-acl"     =>  :acl,
       "Cache-Control" =>  :cache_control,
+      "Content-Disposition" => :content_disposition,
       "x-amz-storage-class" => :reduced_redundancy
     }
 
