@@ -1,3 +1,11 @@
+=== 1.1.14 (Pending)
+
+* Changed: s3cp now adds source file basename to destination path if destination
+           path ends with '/'.
+
+           e.g.  s3cp s3://bucket/path/to/file.ext s3://bucket/some/other/path/
+                 will copy the file to s3://bucket/some/other/path/file.ext
+
 === 1.1.13 (2013-01-27)
 
 * Added:   s3stat --acl option to display associated access-control list XML document.
