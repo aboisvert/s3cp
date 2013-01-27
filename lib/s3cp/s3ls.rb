@@ -88,7 +88,7 @@ end
 
 S3CP.load_config()
 
-@s3 = S3CP.connect().buckets[@bucket]
+@s3 = S3CP.connect()
 
 keys = 0
 rows = 0
@@ -124,15 +124,27 @@ begin
   end
 
   if options[:delimiter]
-    @s3.objects.with_prefix(@key).as_tree(:delimier => options[:delimiter], :append => false).children.each do |entry|
+    @s3.buckets[@bucket].objects.with_prefix(@key).as_tree(:delimier => options[:delimiter], :append => false).children.each do |entry|
       break if display.call(entry)
     end
   else
+    Struct.new("S3Entry", :key, :last_modified, :content_length)
+
     s3_options = Hash.new
     s3_options[:limit] = options[:max_keys] if options[:max_keys]
-    @s3.objects.with_prefix(@key).each(s3_options) do |entry|
-      break if display.call(entry)
-    end
+
+    stop = false
+
+    begin
+      response = @s3.client.list_objects(:bucket_name => @bucket, :prefix => @key)
+      response[:contents].each do |object|
+        entry = Struct::S3Entry.new(object[:key], object[:last_modified], object[:size].to_i)
+        stop = display.call(entry)
+        break if stop
+      end
+      break if stop
+      s3_options.merge!(:marker => response[:contents].last[:key])
+    end while response[:truncated]
   end
 rescue Errno::EPIPE
   # ignore
