@@ -1,6 +1,11 @@
-=== 1.1.13 (Pending)
+=== 1.1.13 (2013-01-27)
 
 * Added:   s3stat --acl option to display associated access-control list XML document.
+
+* Added:   s3mod now accepts multiple (wildcard) paths and supports setting both
+           --headers and --acl. (Denis Arh).
+
+* Fixed:   Beter metadata display in s3stat.
 
 === 1.1.12 (2013-01-22)
 
