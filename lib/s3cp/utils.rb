@@ -175,8 +175,9 @@ module S3CP
       end
     end
 
-
-    options[:metadata] = remaining unless remaining.empty?
+    remaining.each do |k,v|
+      options[k] = v
+    end
 
     options
   end
@@ -186,6 +187,31 @@ module S3CP
       raise "Permissions must be one of the following values: #{LEGAL_MODS}"
     end
     permission
+  end
+
+  # Yield to block for all objects matching key_regex
+  def objects_by_wildcard(bucket, key_regex, &block)
+    # First, trim multiple wildcards & wildcards on the end
+    key = key_regex.gsub(/\*+/, '*')
+
+    if 0 < key.count('*')
+      key_split = key.split('*', 2);
+      kpfix     = key_split.shift(); # ignore first part as AWS API takes it as a prefix
+      regex     = []
+
+      key_split.each do |kpart|
+        regex.push Regexp.quote(kpart)
+      end
+
+      regex = regex.empty? ? nil : Regexp.new(regex.join('.*') + '$');
+
+      bucket.objects.with_prefix(kpfix).each do |obj|
+        yield obj if regex == nil || regex.match(obj.key[kpfix.size..-1])
+      end
+    else
+      # no wildcards, simple:
+      yield bucket.objects[key]
+    end
   end
 end
 

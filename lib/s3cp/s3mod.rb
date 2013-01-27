@@ -19,7 +19,7 @@ require 's3cp/utils'
 
 # Default options
 options = {
-  :verbose => $stdout.isatty ? true : false,
+  :verbose => false,
   :acl     => nil,
   :headers => []
 }
@@ -31,21 +31,22 @@ op = OptionParser.new do |opts|
   opts.banner = <<-BANNER
     s3mod [path(s)] ([permission])
 
-    Warning!
-    Due to limitations in AWS's S3 API all existing headers are removed
-    when you modify/set new headers. In addition to that, if you use --headers,
-    all ACL properties are removed from the S3 object. 
-    If you use only --acl param to fix the permissions, object's headers are preserved
-
-    If you are modifying headers on S3 objects larger then 5Gb, this command will 
-    fail due to limitations in AWS S3.
-
     Multiple paths with multiple wildcards are supported:
       s3://bucket/path/*foo/*/bar*.jpg
-      
-    Legacy support
-    This tool still supports old param format:
-      s3mod path permission
+
+    LEGACY SUPPORT
+
+    This tool still supports old paramater format:
+      % s3mod [path] [permission]
+    You are encouraged to use --acl instead of passing permission as last parameter.
+
+    WARNINGS:
+
+    1) Due to limitations in AWS's S3 API, when you use --headers all ACL
+       properties are removed from the S3 object.
+
+    2) Due to limitations in AWS's S3 API, this command fails on S3 objects
+       larger then 5Gb.
 
   BANNER
   opts.separator ''
@@ -78,60 +79,26 @@ end
 
 # Legacy (support for s3mod [path] [acl] )
 # See if last param starts with "s3://", validate & remove it from list of paths
-if ! options[:acl] && paths.size > 1 && ! paths.last.start_with?('s3://') 
+if !options[:acl] && paths.size > 1 && S3CP::LEGAL_MODS.include?(paths.last)
   options[:acl] = S3CP.validate_acl(paths.pop);
 end
-
-
-@verbose = options[:verbose]
-def log(msg)
-  puts msg if @verbose
-end
-
-# this probaby has some potential for other tools as well
-def objects_by_wildcard(bucket, key, &block)
-  
-  # First, trim multiple wildcards & wildcards on the end
-  key = key.gsub(/\*+/, '*')
-
-  if 0 < key.count('*')
-    key_split = key.split('*', 2);
-    kpfix     = key_split.shift(); # ignore first part as AWS API takes it as a prefix
-    regex     = []
-    
-    key_split.each do |kpart| 
-      regex.push Regexp.quote(kpart)
-    end
-
-    regex = regex.empty? ? nil : Regexp.new(regex.join('.*') + '$');
-
-    bucket.objects.with_prefix(kpfix).each do |obj|
-      yield obj if regex == nil || regex.match(obj.key, kpfix.size)
-    end
-  else
-    # no wildcards, simple:
-    yield bucket.objects[key]
-  end
-end
-
-object_metadata = S3CP.set_header_options({}, S3CP.headers_array_to_hash(options[:headers]))
 
 S3CP.load_config()
 @s3 = S3CP.connect()
 
 paths.each do |path|
   bucket,key = S3CP.bucket_and_key(path)
+  fail "Invalid bucket/key: #{path}" unless key
 
-  objects_by_wildcard(@s3.buckets[bucket], key) { | obj |
-    log obj.key
+  S3CP.objects_by_wildcard(@s3.buckets[bucket], key) { | obj |
+    puts "s3://#{bucket}/#{obj.key}"
 
     if options[:headers].size > 0
-      log "  - setting headers"   
-      obj.copy_to(obj.key, object_metadata);
+      current_medata = obj.metadata
+      object_metadata = S3CP.set_header_options(current_medata, S3CP.headers_array_to_hash(options[:headers]))
     end
 
     if options[:acl]
-      log "  - setting acl"
       obj.acl = options[:acl]
     end
   }
