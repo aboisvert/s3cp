@@ -1,3 +1,7 @@
+=== 1.1.13 (Pending)
+
+* Added:   s3stat --acl option to display associated access-control list XML document.
+
 === 1.1.12 (2013-01-22)
 
 * Added:   Support for 'Content-Disposition' header (Denis Arh).

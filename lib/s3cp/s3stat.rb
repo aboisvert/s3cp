@@ -17,8 +17,14 @@
 
 require 's3cp/utils'
 
+@options = {}
+
 op = OptionParser.new do |opts|
   opts.banner = "s3stat [path]"
+
+  opts.on("--acl", "Display Access Control List XML document") do
+    @options[:acl] = true
+  end
 
   opts.on_tail("-h", "--help", "Show this message") do
     puts op
@@ -43,8 +49,15 @@ S3CP.load_config()
 
 @s3 = S3CP.connect().buckets[@bucket]
 
-metadata = @s3.objects[@key].head
+obj = @s3.objects[@key]
+
+metadata = obj.head
 metadata.keys.sort { |k1, k2| k1.to_s <=> k2.to_s}.each do |k|
   puts "#{"%30s" % k} #{metadata[k]}"
 end
 
+if @options[:acl]
+  puts
+  xml = Nokogiri::XML(obj.acl.to_s)
+  puts xml.to_s
+end

@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    s3cp (1.1.11)
+    s3cp (1.1.12)
       aws-sdk (~> 1.6.3)
       extensions (~> 0.6)
       highline (>= 1.5.1)
@@ -21,7 +21,7 @@ GEM
     httparty (0.9.0)
       multi_json (~> 1.0)
       multi_xml
-    json (1.7.5)
+    json (1.7.6)
     multi_json (1.5.0)
     multi_xml (0.5.1)
     nokogiri (1.5.5)
