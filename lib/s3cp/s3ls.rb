@@ -142,7 +142,7 @@ begin
         stop = display.call(entry)
         break if stop
       end
-      break if stop
+      break if stop || response[:contents].empty?
       s3_options.merge!(:marker => response[:contents].last[:key])
     end while response[:truncated]
   end

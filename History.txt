@@ -1,3 +1,8 @@
+=== 1.1.15 (2013-01-29)
+
+* Fixed:    s3ls would raise undefined method '[]' for nil:NilClass if given
+            path didn't exist (bug introduced in s3cp 1.1.14)
+
 === 1.1.14 (2013-01-27)
 
 * Changed: s3cp now adds source file basename to destination path if destination
