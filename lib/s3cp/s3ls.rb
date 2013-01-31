@@ -114,6 +114,7 @@ begin
     rows += 1
     keys += 1
     response = ''
+
     if options[:rows_per_page] && (rows % options[:rows_per_page] == 0)
       begin
         print "Continue? (Y/n) "
@@ -131,12 +132,14 @@ begin
     Struct.new("S3Entry", :key, :last_modified, :content_length)
 
     s3_options = Hash.new
+    s3_options[:bucket_name] = @bucket
+    s3_options[:prefix] = @key
     s3_options[:limit] = options[:max_keys] if options[:max_keys]
 
     stop = false
 
     begin
-      response = @s3.client.list_objects(:bucket_name => @bucket, :prefix => @key)
+      response = @s3.client.list_objects(s3_options)
       response[:contents].each do |object|
         entry = Struct::S3Entry.new(object[:key], object[:last_modified], object[:size].to_i)
         stop = display.call(entry)
