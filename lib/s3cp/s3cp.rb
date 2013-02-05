@@ -478,7 +478,7 @@ def copy(from, to, options)
         end
       end
     else
-      key_to += File.basename(key_from) if key_to[-1..-1] == "/"
+      key_to += File.basename(from) if key_to[-1..-1] == "/"
       local_to_s3(bucket_to, key_to, File.expand_path(from), options) unless !options[:overwrite] && s3_exist?(bucket_to, key_to)
     end
   when :s3_to_local
