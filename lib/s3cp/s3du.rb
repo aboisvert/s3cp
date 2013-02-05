@@ -95,27 +95,39 @@ def print(key, size)
 end
 
 begin
-  @s3.buckets[@bucket].objects.with_prefix(@prefix).each do |entry|
-    key  = entry.key
-    size = entry.content_length
+  s3_options = Hash.new
+  s3_options[:bucket_name] = @bucket
+  s3_options[:prefix] = @prefix
 
-    if options[:regex].nil? || options[:regex].match(key)
-      current_key = if actual_depth
-        pos = nth_occurrence(key, "/", actual_depth)
-        (pos != -1) ? key[0..pos-1] : key
+  begin
+    response = @s3.client.list_objects(s3_options)
+    response[:contents].each do |object|
+
+      key  = object[:key]
+      size = object[:size].to_i
+
+      if options[:regex].nil? || options[:regex].match(key)
+        current_key = if actual_depth
+          pos = nth_occurrence(key, "/", actual_depth)
+          (pos != -1) ? key[0..pos-1] : key
+        end
+
+        if (last_key && last_key != current_key)
+          print(last_key, subtotal_size)
+          subtotal_size = size
+        else
+          subtotal_size += size
+        end
+
+        last_key = current_key
+        total_size += size
       end
-
-      if (last_key && last_key != current_key)
-        print(last_key, subtotal_size)
-        subtotal_size = size
-      else
-        subtotal_size += size
-      end
-
-      last_key = current_key
-      total_size += size
     end
-  end
+
+    break if response[:contents].empty?
+
+    s3_options.merge!(:marker => response[:contents].last[:key])
+  end while response[:truncated]
 
   if last_key != nil
     print(last_key, subtotal_size)
