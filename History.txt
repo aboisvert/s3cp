@@ -1,3 +1,7 @@
+=== 1.1.19 (2013-02-06)
+
+* Fixed:    Error in `s3lifecycle` if rule prefix is nil.
+
 === 1.1.18 (2013-02-05)
 
 * Added:    Add new `s3lifecycle` command to manage object transtion rules.
