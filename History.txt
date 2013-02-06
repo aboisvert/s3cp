@@ -1,6 +1,6 @@
 === 1.1.18 (2013-02-05)
 
-* Fixed:    Add new `s3lifecycle` command to manage object transtion rules.
+* Added:    Add new `s3lifecycle` command to manage object transtion rules.
 
     A few examples:
 
