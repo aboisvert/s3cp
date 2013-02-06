@@ -91,6 +91,24 @@ module S3CP
     headers
   end
 
+  # Convert a series of rows [["one", "two", "three3"], ["foo", "bar", "baz"], ...]
+  # into a table-format.
+  def tableify(rows)
+    return "" if rows.nil? || rows.empty?
+    cols = rows[0].size
+    widths = (1..cols).map { |c| rows.map { |r| r[c-1].length }.max }
+    format = widths[0..-2].map { |w| "%-#{w}s" }.join("    ") + "    %s"
+    rows.map { |r| format % r }.join("\n")
+  end
+
+  def parse_days_or_date(d)
+    if d.to_s =~ /^\d+$/
+      d.to_i
+    else
+      Date.parse(d)
+    end
+  end
+
   # Round a number at some `decimals` level of precision.
   def round(n, decimals = 0)
     (n * (10.0 ** decimals)).round * (10.0 ** (-decimals))

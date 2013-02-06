@@ -1,3 +1,27 @@
+=== 1.1.18 (2013-02-05)
+
+* Fixed:    Add new `s3lifecycle` command to manage object transtion rules.
+
+    A few examples:
+
+    # Show lifecycle rules for bucket
+    % s3lifecycle s3://bucket
+
+    # Add expiration rule (expire after 180 days)
+    % s3lifecycle --name "Optional name" --expire 180 s3://bucket/below/some/path/
+
+    # Transition objects to Glacier after 180 days
+    % s3lifecycle --glacier 180 s3://bucket/below/some/path/
+
+    # Transition objects to Glacier after 2013-03-29
+    % s3lifecycle --glacier 2013-03-29 s3://bucket/below/some/path/
+
+    # Enable rule by path (you can use --name to enable by name)
+    % s3lifecycle --enable s3://bucket/below/some/path/
+
+    # Disable rule by name
+    % s3lifecycle --disable --name "Some rule" s3://bucket
+
 === 1.1.17 (2013-02-05)
 
 * Fixed:    Speed-up `s3du` (same dealio as s3ls -l from version 1.1.14)
