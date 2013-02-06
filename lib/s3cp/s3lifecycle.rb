@@ -84,11 +84,11 @@ end
 
 def rule_to_str(r)
   if r.expiration_time
-    [ r.prefix, r.id, r.status, time_or_date_str("Expire", r.expiration_time)]
+    [ r.prefix || "[root]", r.id, r.status, time_or_date_str("Expire", r.expiration_time)]
   elsif r.glacier_transition_time
-    [ r.prefix, r.id, r.status, time_or_date_str("Glacier", r.glacier_transition_time)]
+    [ r.prefix || "[root]", r.id, r.status, time_or_date_str("Glacier", r.glacier_transition_time)]
   else
-    [ r.prefix, r.id, r.status, "???"]
+    [ r.prefix || "[root]", r.id, r.status, "???"]
   end
 end
 
@@ -157,12 +157,17 @@ paths.each do |path|
       fail "Rule or prefix not found" unless success
 
     else
-      puts "Lifecycle rules:"
       rules = @s3.buckets[bucket].lifecycle_configuration.rules.to_a
       if rules.empty?
-        puts "No lifecycle rules"
+        puts "#{bucket} - no lifecycle rules"
       else
-        puts S3CP.tableify(rules.map { |r| rule_to_str(r) })
+        puts "#{bucket} - lifecycle rules:"
+        begin
+          puts S3CP.tableify(rules.map { |r| rule_to_str(r) })
+        rescue => e
+          puts rules.inspect
+          raise e
+        end
       end
   end
 end
