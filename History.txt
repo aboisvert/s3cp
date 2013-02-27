@@ -1,3 +1,21 @@
+=== 1.1.20 (2013-02-26)
+
+* Added:  "--header" command-line option to s3cp, s3up, s3mod.
+
+          This option allows passing individual headers including ones with
+          a comma in the value, e.g.:
+
+            s3cp --header 'Cache-Control: max-age=604800,must-revalidate'
+
+          That otherwise would have been interpreted as two headers by the
+          "--headers" option.   You may use several "--header" arguments
+          if needed.
+
+          (Be warned that at the time of this writing, the 's3stat' command
+          does not display all headers/metadata on the S3 object.  This is
+          a bug in the aws-sdk gem.   You may use the AWS console to get an
+          accurate list of all object headers and metadata.)
+
 === 1.1.19 (2013-02-06)
 
 * Fixed:    Error in `s3lifecycle` if rule prefix is nil.

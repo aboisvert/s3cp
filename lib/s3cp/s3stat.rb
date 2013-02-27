@@ -52,7 +52,7 @@ S3CP.load_config()
 obj = @s3.objects[@key]
 
 metadata = obj.head
-metadata.keys.sort { |k1, k2| k1.to_s <=> k2.to_s}.each do |k|
+metadata.to_h.keys.sort { |k1, k2| k1.to_s <=> k2.to_s}.each do |k|
   puts "#{"%30s" % k} #{metadata[k].is_a?(Hash) ? metadata[k].inspect : metadata[k].to_s}"
 end
 

@@ -83,7 +83,7 @@ module S3CP
     header_array.each do |header|
       header_parts = header.split(": ", 2)
       if header_parts.size == 2
-        headers[header_parts[0].downcase] = header_parts[1]  # RightAWS gem expect lowercase header names :(
+        headers[header_parts[0]] = header_parts[1]
       else
         fail("Invalid header value; expected single colon delimiter; e.g. Header: Value")
       end
@@ -193,9 +193,11 @@ module S3CP
       end
     end
 
+    metadata = {}
     remaining.each do |k,v|
-      options[k] = v
+      metadata[k] = v
     end
+    options[:metadata] = metadata if metadata
 
     options
   end

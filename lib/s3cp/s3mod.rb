@@ -56,7 +56,11 @@ op = OptionParser.new do |opts|
   end
 
   opts.on('--headers \'Header1: Header1Value\',\'Header2: Header2Value\'', Array, "Headers to set on the item in S3." ) do |h|
-    options[:headers] = h
+    options[:headers] += h
+  end
+
+  opts.on('--header \'Header: Value\'', "Header to set on the item in S3." ) do |h|
+    options[:headers] += [h]
   end
 
   opts.on("--acl PERMISSION", "One of 'private', 'authenticated-read', 'public-read', 'public-read-write'") do |permission|
