@@ -372,7 +372,7 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
          S3CP.md5(dest)
       end
 
-      if !options[:sync] || (expected_md5 != actual_md5)
+      if !options[:sync] || expected_md5.nil? || (expected_md5 != actual_md5)
         f = File.new(dest, "wb")
         begin
           progress_bar = if $stdout.isatty

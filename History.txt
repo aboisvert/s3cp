@@ -1,3 +1,10 @@
+=== 1.1.21 (2013-03-05)
+
+* Fixed:  s3cp --sync would not correctly copy a file from S3 to local file
+          system if the file didn't already exist *and* it had invalid
+          MD5 checksum metadata in S3 (from a multi-part upload).
+
+
 === 1.1.20 (2013-02-26)
 
 * Added:  "--header" command-line option to s3cp, s3up, s3mod.
