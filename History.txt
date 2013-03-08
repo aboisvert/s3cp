@@ -1,3 +1,33 @@
+=== 1.1.22 (2013-03-07)
+
+* Changed: s3cp now adds a new "md5" custom metadata to any uploaded file
+           using multi-part protocol with --checksum option to allow for
+           proper content integrity checking and synchronization (--sync)
+           on (large / multi-part) files since the etag metadata is only a
+           valid MD5 value for files uploaded as a single part.
+
+           As a reminder, --checksum is on by default and multi-part upload
+           kicks in by default for files > 16MB.  These defaults are
+           configurable through the command-line, environment variables or
+           $HOME/.s3cp.
+
+           On the command line,
+
+             # Turn things off
+             % export S3CP_CHECKSUM=false
+             % export S3CP_MULTIPART=false
+
+             # Configure multipart threshold for files > 64MB
+             % export S3CP_MULTIPART=67108864
+
+           In your in $HOME/.s3cp,
+
+             ENV["S3CP_MULTIPART"] = "false"
+
+             # Use multi-part upload only for files > 128MB
+             AWS.config.s3_multipart_threshold = (128 * 1024 * 1024)
+
+
 === 1.1.21 (2013-03-05)
 
 * Fixed:  s3cp --sync would not correctly copy a file from S3 to local file

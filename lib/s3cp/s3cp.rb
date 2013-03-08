@@ -27,7 +27,14 @@ options[:checksum]    = ENV["S3CP_CHECKSUM"]    ? (ENV["S3CP_CHECKSUM"]  =~ /y|y
 options[:retries]     = ENV["S3CP_RETRIES"]     ? ENV["S3CP_RETRIES"].to_i     : 18
 options[:retry_delay] = ENV["S3CP_RETRY_DELAY"] ? ENV["S3CP_RETRY_DELAY"].to_i : 1
 options[:retry_backoff] = ENV["S3CP_BACKOFF"]   ? ENV["S3CP_BACKOFF"].to_f     : 1.4142 # double every 2 tries
-
+options[:multipart] = case ENV["S3CP_MULTIPART"]
+  when /n|no|false/i
+    false
+  when /\d+/
+    ENV["S3CP_MULTIPART"].to_i
+  else
+    true
+  end
 options[:include_regex] = []
 options[:exclude_regex] = []
 options[:sync] = false
@@ -275,7 +282,7 @@ def local_to_s3(bucket_to, key, file, options = {})
     when :not_found
       nil
     when :invalid
-      STDERR.puts "Warning: invalid MD5 checksum in metadata; file will be force-copied."
+      STDERR.puts "Warning: No MD5 checksum available and ETag not suitable due to multi-part upload; file will be force-copied."
       nil
     else
       md5
@@ -295,17 +302,31 @@ def local_to_s3(bucket_to, key, file, options = {})
       end
 
       begin
+        obj = @s3.buckets[bucket_to].objects[key]
+
         s3_options = {}
         S3CP.set_header_options(s3_options, @headers)
         s3_options[:acl] = options[:acl]
         s3_options[:content_length] = File.size(file)
+
+        multipart_threshold = options[:multipart].is_a?(Fixnum) ?  options[:multipart] : AWS.config.s3_multipart_threshold
+        if (expected_md5 != nil) && (File.size(file) >= multipart_threshold) && options[:multipart]
+          meta = s3_options[:metadata] || {}
+          meta[:md5] = expected_md5
+          s3_options[:metadata] = meta
+        end
+
+        if options[:multipart]
+          s3_options[:multipart_threshold] = multipart_threshold
+        else
+          s3_options[:single_request] = true
+        end
 
         progress_bar = ProgressBar.new(File.basename(file), File.size(file)).tap do |p|
           p.file_transfer_mode
         end
 
         File.open(file) do |io|
-          obj = @s3.buckets[bucket_to].objects[key]
           obj.write(ProxyIO.new(io, progress_bar), s3_options)
         end
 
@@ -427,13 +448,14 @@ def s3_checksum(bucket, key)
     raise e
   end
 
-  md5 = metadata[:etag] or fail "Unable to get etag/md5 for #{bucket_to}:#{key}"
-  return :invalid unless md5
-
-  md5 = md5.sub(/^"/, "").sub(/"$/, "") # strip beginning and trailing quotes
-  return :invalid if md5 =~ /-/
-
-  md5
+  case
+  when metadata[:meta] && metadata[:meta]["md5"]
+    metadata[:meta]["md5"]
+  when metadata[:etag] && metadata[:etag] !~ /-/
+    metadata[:etag].sub(/^"/, "").sub(/"$/, "") # strip beginning and trailing quotes
+  else
+    :invalid
+  end
 end
 
 def key_path(prefix, key)
