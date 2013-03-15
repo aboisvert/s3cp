@@ -39,6 +39,10 @@ op = OptionParser.new do |opts|
     options[:verbose] = true
   end
 
+  opts.on("--debug", "Debug mode") do
+    options[:debug] = true
+  end
+
   opts.on("--rows ROWS", "Rows per page") do |rows|
     options[:rows_per_page] = rows.to_i
   end
@@ -73,7 +77,7 @@ end
 
 url = ARGV[0]
 
-if options[:verbose]
+if options[:debug]
   puts "URL: #{url}"
   puts "Options: #{options.inspect}"
 end
@@ -81,7 +85,7 @@ end
 @bucket, @key = S3CP.bucket_and_key(url)
 fail "Your URL looks funny, doesn't it?" unless @bucket
 
-if options[:verbose]
+if options[:debug]
   puts "bucket #{@bucket}"
   puts "key #{@key}"
 end
@@ -151,5 +155,10 @@ begin
   end
 rescue Errno::EPIPE
   # ignore
+rescue => e
+  $stderr.print "s3ls: [#{e.class}] #{e.message}\n"
+  if options[:debug]
+    $stderr.print e.backtrace.join("\n") + "\n"
+  end
 end
 

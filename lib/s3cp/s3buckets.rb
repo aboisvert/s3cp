@@ -27,6 +27,10 @@ op = OptionParser.new do |opts|
     options[:verbose] = true
   end
 
+  opts.on("--debug", "Verbose mode") do
+    options[:debug] = true
+  end
+
   opts.on_tail("-h", "--help", "Show this message") do
     puts op
     exit
@@ -36,8 +40,15 @@ op.parse!(ARGV)
 
 S3CP.load_config()
 
-s3 = S3CP.connect()
-s3.buckets.each do |bucket|
-  puts bucket.name
+begin
+  s3 = S3CP.connect()
+  s3.buckets.each do |bucket|
+    puts bucket.name
+  end
+rescue => e
+  $stderr.print "s3buckets: [#{e.class}] #{e.message}\n"
+  if options[:debug]
+    $stderr.print e.backtrace.join("\n") + "\n"
+  end
 end
 

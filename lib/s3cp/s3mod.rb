@@ -55,6 +55,10 @@ op = OptionParser.new do |opts|
     options[:verbose] = true
   end
 
+  opts.on("--debug", "Debug mode") do
+    options[:debug] = true
+  end
+
   opts.on('--headers \'Header1: Header1Value\',\'Header2: Header2Value\'', Array, "Headers to set on the item in S3." ) do |h|
     options[:headers] += h
   end
@@ -87,23 +91,30 @@ if !options[:acl] && paths.size > 1 && S3CP::LEGAL_MODS.include?(paths.last)
   options[:acl] = S3CP.validate_acl(paths.pop);
 end
 
-S3CP.load_config()
-@s3 = S3CP.connect()
+begin
+  S3CP.load_config()
+  @s3 = S3CP.connect()
 
-paths.each do |path|
-  bucket,key = S3CP.bucket_and_key(path)
-  fail "Invalid bucket/key: #{path}" unless key
+  paths.each do |path|
+    bucket,key = S3CP.bucket_and_key(path)
+    fail "Invalid bucket/key: #{path}" unless key
 
-  S3CP.objects_by_wildcard(@s3.buckets[bucket], key) { | obj |
-    puts "s3://#{bucket}/#{obj.key}"
+    S3CP.objects_by_wildcard(@s3.buckets[bucket], key) { | obj |
+      puts "s3://#{bucket}/#{obj.key}"
 
-    if options[:headers].size > 0
-      current_medata = obj.metadata
-      object_metadata = S3CP.set_header_options(current_medata, S3CP.headers_array_to_hash(options[:headers]))
-    end
+      if options[:headers].size > 0
+        current_medata = obj.metadata
+        object_metadata = S3CP.set_header_options(current_medata, S3CP.headers_array_to_hash(options[:headers]))
+      end
 
-    if options[:acl]
-      obj.acl = options[:acl]
-    end
-  }
+      if options[:acl]
+        obj.acl = options[:acl]
+      end
+    }
+  end
+rescue => e
+  $stderr.print "s3mod: [#{e.class}] #{e.message}\n"
+  if options[:debug]
+    $stderr.print e.backtrace.join("\n") + "\n"
+  end
 end

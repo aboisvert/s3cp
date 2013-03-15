@@ -148,12 +148,12 @@ if ARGV.size < 2
 end
 
 if options[:include_regex].any? && !options[:recursive]
-  puts "-i (--include regex) option requires -r (recursive) option."
+  STDERR.puts "-i (--include regex) option requires -r (recursive) option."
   exit(1)
 end
 
 if options[:exclude_regex].any? && !options[:recursive]
-  puts "-x (--exclude regex) option requires -r (recursive) option."
+  STDERR.puts "-x (--exclude regex) option requires -r (recursive) option."
   exit(1)
 end
 
@@ -161,9 +161,9 @@ destination = ARGV.last
 sources = ARGV[0..-2]
 
 if options[:debug]
-  puts "sources: #{sources.inspect}"
-  puts "destination: #{destination}"
-  puts "Options: \n#{options.inspect}"
+  STDERR.puts "sources: #{sources.inspect}"
+  STDERR.puts "destination: #{destination}"
+  STDERR.puts "Options: \n#{options.inspect}"
 end
 
 class ProxyIO
@@ -347,7 +347,7 @@ def local_to_s3(bucket_to, key, file, options = {})
         actual_md5 = "bad"
         if progress_bar
           progress_bar.clear
-          puts "Error copying #{file} to s3://#{bucket_to}/#{key}"
+          STDERR.puts "Error copying #{file} to s3://#{bucket_to}/#{key}"
         end
         raise e if !options[:checksum] || e.is_a?(AWS::S3::Errors::AccessDenied)
         STDERR.puts e
@@ -496,9 +496,9 @@ def copy(from, to, options)
       files = Dir[from + "/**/*"]
       files.each do |f|
         if File.file?(f) && match(f)
-          puts "bucket_to #{bucket_to}"
-          puts "no_slash(key_to) #{no_slash(key_to)}"
-          puts "relative(from, f) #{relative(from, f)}"
+          #puts "bucket_to #{bucket_to}"
+          #puts "no_slash(key_to) #{no_slash(key_to)}"
+          #puts "relative(from, f) #{relative(from, f)}"
           key = key_path key_to, relative(from, f)
           local_to_s3(bucket_to, key, File.expand_path(f), options) unless !options[:overwrite] && s3_exist?(bucket_to, key)
         end
@@ -542,7 +542,13 @@ def copy(from, to, options)
   end
 end
 
-sources.each do |source|
-  copy(source, destination, options)
+begin
+  sources.each do |source|
+    copy(source, destination, options)
+  end
+rescue => e
+  $stderr.print "s3cp: [#{e.class}] #{e.message}\n"
+  if options[:debug]
+    $stderr.print e.backtrace.join("\n") + "\n"
+  end
 end
-

@@ -47,6 +47,10 @@ op = OptionParser.new do |opts|
     options[:delimiter] = delimiter
   end
 
+  opts.on("--debug", "Debug mode") do
+    options[:debug] = true
+  end
+
   opts.on_tail("-h", "--help", "Show this message") do
     puts op
     exit
@@ -158,5 +162,10 @@ begin
   display_tree.call(prefix, root.children, depth)
 rescue Errno::EPIPE
   # ignore
+rescue => e
+  $stderr.print "s3tree: [#{e.class}] #{e.message}\n"
+  if options[:debug]
+    $stderr.print e.backtrace.join("\n") + "\n"
+  end
 end
 

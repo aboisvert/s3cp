@@ -1,3 +1,8 @@
+=== 1.1.24 (2013-03-15)
+
+* Changed:  Commands now print a succint error code + message instead of
+            Ruby stacktrace.  (Stacktraces still available using --debug flag)
+
 === 1.1.23 (2013-03-15)
 
 * Added:   s3cat now accepts --head, --tail and --range arguments.

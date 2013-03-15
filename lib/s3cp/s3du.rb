@@ -44,6 +44,10 @@ op = OptionParser.new do |opts|
     options[:regex] = Regexp.new(regex)
   end
 
+  opts.on("--debug", "Debug mode") do
+    options[:debug] = true
+  end
+
   opts.on_tail("-h", "--help", "Show this message") do
     puts op
     exit
@@ -140,5 +144,10 @@ begin
   end
 rescue Errno::EPIPE
   # ignore
+rescue => e
+  $stderr.print "s3du: [#{e.class}] #{e.message}\n"
+  if options[:debug]
+    $stderr.print e.backtrace.join("\n") + "\n"
+  end
 end
 

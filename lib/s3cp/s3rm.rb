@@ -58,6 +58,10 @@ op = OptionParser.new do |opts|
     options[:verbose] = true
   end
 
+  opts.on("--debug", "Debug mode") do
+    options[:debug] = true
+  end
+
   opts.on_tail("-h", "--help", "Show this message") do
     puts op
     exit
@@ -98,47 +102,55 @@ end
 include_regex = options[:include_regex] ? Regexp.new(options[:include_regex]) : nil
 exclude_regex = options[:exclude_regex] ? Regexp.new(options[:exclude_regex]) : nil
 
-S3CP.load_config()
+begin
+  S3CP.load_config()
 
-@s3 = S3CP.connect()
+  @s3 = S3CP.connect()
 
-if options[:recursive]
-  matching_keys = []
+  if options[:recursive]
+    matching_keys = []
 
-  @s3.buckets[@bucket].objects.with_prefix(@key).each do |entry|
-    key = "s3://#{@bucket}/#{entry.key}"
+    @s3.buckets[@bucket].objects.with_prefix(@key).each do |entry|
+      key = "s3://#{@bucket}/#{entry.key}"
 
-    matching = true
-    matching = false if include_regex && !include_regex.match(entry.key)
-    matching = false if exclude_regex && exclude_regex.match(entry.key)
+      matching = true
+      matching = false if include_regex && !include_regex.match(entry.key)
+      matching = false if exclude_regex && exclude_regex.match(entry.key)
 
-    puts "#{key} => #{matching}" if options[:verbose]
+      puts "#{key} => #{matching}" if options[:verbose]
 
-    if matching
-      matching_keys << entry.key
-      puts key unless options[:silent] || options[:verbose]
+      if matching
+        matching_keys << entry.key
+        puts key unless options[:silent] || options[:verbose]
+      end
+    end
+
+    if options[:fail_if_not_exist] && matching_keys.length == 0
+      puts "No matching keys."
+      exit(1)
+    end
+
+    # if any of the objects failed to delete, a BatchDeleteError will be raised with a summary of the errors
+    @s3.buckets[@bucket].objects.delete(matching_keys) unless options[:test]
+  else
+    # delete a single file; check if it exists
+    if options[:fail_if_not_exist] && !@s3.buckets[@bucket].objects[@key].exist?
+      key = "s3://#{@bucket}/#{@key}"
+      puts "#{key} does not exist."
+      exit(1)
+    end
+
+    begin
+      @s3.buckets[@bucket].objects[@key].delete() unless options[:test]
+    rescue => e
+      puts e.to_s
+      raise e unless e.is_a? AWS::S3::Errors::NoSuchKey
     end
   end
-
-  if options[:fail_if_not_exist] && matching_keys.length == 0
-    puts "No matching keys."
-    exit(1)
-  end
-
-  # if any of the objects failed to delete, a BatchDeleteError will be raised with a summary of the errors
-  @s3.buckets[@bucket].objects.delete(matching_keys) unless options[:test]
-else
-  # delete a single file; check if it exists
-  if options[:fail_if_not_exist] && !@s3.buckets[@bucket].objects[@key].exist?
-    key = "s3://#{@bucket}/#{@key}"
-    puts "#{key} does not exist."
-    exit(1)
-  end
-
-  begin
-    @s3.buckets[@bucket].objects[@key].delete() unless options[:test]
-  rescue => e
-    puts e.to_s
-    raise e unless e.is_a? AWS::S3::Errors::NoSuchKey
+rescue => e
+  $stderr.print "s3rm: [#{e.class}] #{e.message}\n"
+  if options[:debug]
+    $stderr.print e.backtrace.join("\n") + "\n"
   end
 end
+

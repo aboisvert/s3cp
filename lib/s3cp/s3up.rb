@@ -41,6 +41,10 @@ op = OptionParser.new do |opts|
     options[:acl] = S3CP.validate_acl(permission)
   end
 
+  opts.on("--debug", "Debug mode") do
+    options[:debug] = true
+  end
+
   opts.separator "        e.g.,"
   opts.separator "              HTTP headers: \'Content-Type: image/jpg\'"
   opts.separator "               AMZ headers: \'x-amz-acl: public-read\'"
@@ -65,33 +69,41 @@ url = ARGV[0]
 bucket, key = S3CP.bucket_and_key(url)
 fail "Your URL looks funny, doesn't it?" unless bucket
 
-S3CP.load_config()
+begin
+  S3CP.load_config()
 
-@s3 = S3CP.connect()
+  @s3 = S3CP.connect()
 
-# copy all of STDIN to a temp file
-temp = Tempfile.new('s3cp')
-while true
+  # copy all of STDIN to a temp file
+  temp = Tempfile.new('s3cp')
+  while true
+    begin
+      data = STDIN.sysread(4 * 1024)
+      temp.syswrite(data)
+    rescue EOFError => e
+      break
+    end
+  end
+  temp.close
+  temp.open
+
+  # upload temp file
   begin
-    data = STDIN.sysread(4 * 1024)
-    temp.syswrite(data)
-  rescue EOFError => e
-    break
+    s3_options = {}
+    S3CP.set_header_options(s3_options, @headers)
+    s3_options[:acl] = options[:acl]
+    @s3.buckets[bucket].objects[key].write(temp, s3_options)
+    STDERR.puts "s3://#{bucket}/#{key} => #{S3CP.format_filesize(temp.size)} "
+  ensure
+    # cleanup
+    temp.close
+    temp.delete
+  end
+rescue => e
+  $stderr.print "s3up: [#{e.class}] #{e.message}\n"
+  if options[:debug]
+    $stderr.print e.backtrace.join("\n") + "\n"
   end
 end
-temp.close
-temp.open
 
-# upload temp file
-begin
-  s3_options = {}
-  S3CP.set_header_options(s3_options, @headers)
-  s3_options[:acl] = options[:acl]
-  @s3.buckets[bucket].objects[key].write(temp, s3_options)
-  STDERR.puts "s3://#{bucket}/#{key} => #{S3CP.format_filesize(temp.size)} "
-ensure
-  # cleanup
-  temp.close
-  temp.delete
-end
 

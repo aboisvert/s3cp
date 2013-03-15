@@ -73,70 +73,78 @@ if options[:debug]
   puts "Options: \n#{options.inspect}"
 end
 
-@bucket, @prefix = S3CP.bucket_and_key(url)
-fail "Your URL looks funny, doesn't it?" unless @bucket
+begin
+  @bucket, @prefix = S3CP.bucket_and_key(url)
+  fail "Your URL looks funny, doesn't it?" unless @bucket
 
-S3CP.load_config()
+  S3CP.load_config()
 
-read_options = {}
-read_options[:debug] = options[:debug]
-read_options[:head] = options[:head] if options[:head]
-read_options[:tail] = options[:tail] if options[:tail]
-read_options[:range_start] = options[:range_start] if options[:range_start]
-read_options[:range_end] = options[:range_end] if options[:range_end]
+  read_options = {}
+  read_options[:debug] = options[:debug]
+  read_options[:head] = options[:head] if options[:head]
+  read_options[:tail] = options[:tail] if options[:tail]
+  read_options[:range_start] = options[:range_start] if options[:range_start]
+  read_options[:range_end] = options[:range_end] if options[:range_end]
 
-@s3 = S3CP.connect().buckets[@bucket]
+  @s3 = S3CP.connect().buckets[@bucket]
 
 
-if options[:edit] && (options[:head] || options[:tail] || options[:range_start] || options[:range_end])
-  fail "--edit option is not intended to be used with --head, --tail nor --range"
-end
-
-if options[:tty] || options[:edit]
-  # store contents to file to display with PAGER
-  size = @s3.objects[@prefix].content_length
-
-  progress_bar = ProgressBar.new(File.basename(@prefix), size).tap do |p|
-    p.file_transfer_mode
+  if options[:edit] && (options[:head] || options[:tail] || options[:range_start] || options[:range_end])
+    fail "--edit option is not intended to be used with --head, --tail nor --range"
   end
 
-  file = Tempfile.new(File.basename(@prefix) + '_')
-  out = File.new(file.path, "wb")
-  begin
-    @s3.objects[@prefix].read_as_stream(read_options) do |chunk|
-      out.write(chunk)
-      progress_bar.inc chunk.size
+  if options[:tty] || options[:edit]
+    # store contents to file to display with PAGER
+    size = @s3.objects[@prefix].content_length
+
+    progress_bar = ProgressBar.new(File.basename(@prefix), size).tap do |p|
+      p.file_transfer_mode
     end
-    progress_bar.finish
-  ensure
-    out.close()
-  end
-  if options[:edit]
-    before_md5 = S3CP.md5(file.path)
-    system "#{ENV['EDITOR'] || 'vi'} #{file.path}"
-    if ($? == 0)
-      if (S3CP.md5(file.path) != before_md5)
-        ARGV.clear
-        ARGV << file.path
-        ARGV << url
-        load "s3cp/s3cp.rb"
+
+    file = Tempfile.new(File.basename(@prefix) + '_')
+    out = File.new(file.path, "wb")
+    begin
+      @s3.objects[@prefix].read_as_stream(read_options) do |chunk|
+        out.write(chunk)
+        progress_bar.inc chunk.size
+      end
+      progress_bar.finish
+    ensure
+      out.close()
+    end
+    if options[:edit]
+      before_md5 = S3CP.md5(file.path)
+      system "#{ENV['EDITOR'] || 'vi'} #{file.path}"
+      if ($? == 0)
+        if (S3CP.md5(file.path) != before_md5)
+          ARGV.clear
+          ARGV << file.path
+          ARGV << url
+          load "s3cp/s3cp.rb"
+        else
+          puts "File unchanged."
+        end
       else
-        puts "File unchanged."
+        puts "Edit aborted (result code #{$?})."
       end
     else
-      puts "Edit aborted (result code #{$?})."
+      system "#{ENV['PAGER'] || 'less'} #{file.path}"
     end
+    file.delete()
   else
-    system "#{ENV['PAGER'] || 'less'} #{file.path}"
-  end
-  file.delete()
-else
-  @s3.objects[@prefix].read_as_stream(read_options) do |chunk|
-    begin
-      STDOUT.print(chunk)
-    rescue Errno::EPIPE
-      break
+    @s3.objects[@prefix].read_as_stream(read_options) do |chunk|
+      begin
+        STDOUT.print(chunk)
+      rescue Errno::EPIPE
+        break
+      end
     end
+  end
+
+rescue => e
+  $stderr.print "s3cat: [#{e.class}] #{e.message}\n"
+  if options[:debug]
+    $stderr.print e.backtrace.join("\n") + "\n"
   end
 end
 
