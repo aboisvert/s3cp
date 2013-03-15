@@ -1,3 +1,22 @@
+=== 1.1.23 (2013-03-15)
+
+* Added:   s3cat now accepts --head, --tail and --range arguments.
+
+              # Display only first 8KB of file
+              % s3cat --head 8k bucket:path/to/file
+
+              # Display only last 4096 bytes of file
+              % s3cat --tail 4096 bucket:path/to/file
+
+              # Download file content between positions 4096 - 12288 (exclusive)
+              % s3cat --range 4k-12k bucket:path/to/file > file_fragment
+
+              # Download content after position 12288 (inclusive)
+              % s3cat --range 12k- bucket:path/to/file > file_fragment
+
+              # Download content before position 12288 (exclusive)
+              % s3cat --range -12k bucket:path/to/file > file_fragment
+
 === 1.1.22 (2013-03-07)
 
 * Changed: s3cp now adds a new "md5" custom metadata to any uploaded file

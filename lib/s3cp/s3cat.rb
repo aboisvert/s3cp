@@ -39,6 +39,21 @@ op = OptionParser.new do |opts|
     options[:edit] = edit
   end
 
+  opts.on("--head SIZE", "Download only 'head' part of the file mode, e.g. 4KB, 1024B, 2GB") do |size|
+    options[:head] = S3CP.size_in_bytes(size)
+  end
+
+  opts.on("--tail SIZE", "Download only 'tail' part of the file mode, e.g. 4KB, 1024B, 2GB") do |size|
+    options[:tail] = S3CP.size_in_bytes(size)
+  end
+
+  opts.on("--range START-END", "Download only range (in absolute positions) portion, e.g. 1GB-2GB, 16K-128k, 128k-, -128k") do |range|
+    range_start, range_end = range.split("-")
+    options[:range_start] = S3CP.size_in_bytes(range_start) if range_start && (!range_start.empty?)
+    options[:range_end] = S3CP.size_in_bytes(range_end) - 1 if range_end && (!range_end.empty?)
+    range_start, range_end = range.split("-")
+  end
+
   opts.on_tail("-h", "--help", "Show this message") do
     puts op
     exit
@@ -63,7 +78,19 @@ fail "Your URL looks funny, doesn't it?" unless @bucket
 
 S3CP.load_config()
 
+read_options = {}
+read_options[:debug] = options[:debug]
+read_options[:head] = options[:head] if options[:head]
+read_options[:tail] = options[:tail] if options[:tail]
+read_options[:range_start] = options[:range_start] if options[:range_start]
+read_options[:range_end] = options[:range_end] if options[:range_end]
+
 @s3 = S3CP.connect().buckets[@bucket]
+
+
+if options[:edit] && (options[:head] || options[:tail] || options[:range_start] || options[:range_end])
+  fail "--edit option is not intended to be used with --head, --tail nor --range"
+end
 
 if options[:tty] || options[:edit]
   # store contents to file to display with PAGER
@@ -76,7 +103,7 @@ if options[:tty] || options[:edit]
   file = Tempfile.new(File.basename(@prefix) + '_')
   out = File.new(file.path, "wb")
   begin
-    @s3.objects[@prefix].read_as_stream do |chunk|
+    @s3.objects[@prefix].read_as_stream(read_options) do |chunk|
       out.write(chunk)
       progress_bar.inc chunk.size
     end
@@ -104,7 +131,7 @@ if options[:tty] || options[:edit]
   end
   file.delete()
 else
-  @s3.objects[@prefix].read_as_stream do |chunk|
+  @s3.objects[@prefix].read_as_stream(read_options) do |chunk|
     begin
       STDOUT.print(chunk)
     rescue Errno::EPIPE

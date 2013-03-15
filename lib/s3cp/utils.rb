@@ -165,6 +165,23 @@ module S3CP
     end
   end
 
+  def size_in_bytes(size)
+    case size
+    when /^(\d+)$/ # bytes by default
+      $1.to_i
+    when /^(\d+)b$/i
+      $1.to_i
+    when /^(\d+)kb?$/i
+      $1.to_i * 1024
+    when /^(\d+)mb?$/i
+      $1.to_i * 1024 * 1024
+    when /^(\d+)gb?$/i
+      $1.to_i * 1024 * 1024 * 1024
+    else
+      fail("Invalid size value: #{size}.")
+    end
+  end
+
   def set_header_options(options, headers)
     return options unless headers
 
@@ -245,11 +262,19 @@ module AWS
     class S3Object
       def read_as_stream(options = nil, &blk)
         options ||= {}
-        chunk_size = options[:chunk] || DEFAULT_STREAMING_CHUNK_SIZE
         size = content_length
-        byte_offset = 0
-        while byte_offset < size
-          range = "bytes=#{byte_offset}-#{byte_offset + chunk_size - 1}"
+        chunk_size = options[:chunk] || DEFAULT_STREAMING_CHUNK_SIZE
+        if options[:range_start] || options[:range_end]
+          byte_offset = options[:range_start] || 0
+          max_offset = options[:range_end] || size
+        else
+          byte_offset = options[:tail] ? (size - options[:tail]) : 0
+          max_offset = options[:head] ? (options[:head] - 1) : size
+        end
+        $stderr.print "Downloading byte range #{byte_offset}-#{max_offset}\n" if options[:debug]
+        while byte_offset < max_offset
+          range = "bytes=#{byte_offset}-#{[byte_offset + chunk_size - 1, max_offset].min}"
+          $stderr.print range + "\n" if options[:debug]
           yield read(:range => range)
           byte_offset += chunk_size
         end
