@@ -176,7 +176,7 @@ class ProxyIO
 
   def read(size)
     result = @io.read(size)
-    @progress_bar.inc result.length if result
+    @progress_bar.inc result.length if result && @progress_bar
     result
   end
 
@@ -322,8 +322,10 @@ def local_to_s3(bucket_to, key, file, options = {})
           s3_options[:single_request] = true
         end
 
-        progress_bar = ProgressBar.new(File.basename(file), File.size(file)).tap do |p|
-          p.file_transfer_mode
+        progress_bar = if $stdout.isatty
+          ProgressBar.new(File.basename(file), File.size(file)).tap do |p|
+            p.file_transfer_mode
+          end
         end
 
         File.open(file) do |io|
