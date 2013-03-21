@@ -19,7 +19,7 @@ require 's3cp/utils'
 
 # Parse arguments
 options = {}
-options[:rows_per_page] = ($terminal.output_rows - 1) if $stdout.isatty
+options[:rows_per_page] = ($terminal.output_rows - 1) if $stdout.isatty rescue nil
 options[:delimiter] = ENV["S3CP_DELIMITER"] || "/"
 options[:max_depth] = 9999999
 

@@ -20,7 +20,7 @@ require 's3cp/utils'
 # Parse arguments
 options = {}
 options[:date_format] = ENV['S3CP_DATE_FORMAT'] || '%x %X'
-options[:rows_per_page] = ($terminal.output_rows - 1) if $stdout.isatty
+options[:rows_per_page] = ($terminal.output_rows - 1) if $stdout.isatty rescue nil
 options[:precision] = 0
 
 op = OptionParser.new do |opts|
