@@ -486,12 +486,20 @@ def copy(from, to, options)
       keys.each do |key|
         if match(key)
           dest = key_path key_to, relative(key_from, key)
-          s3_to_s3(bucket_from, key, bucket_to, dest, options) unless !options[:overwrite] && s3_exist?(bucket_to, dest)
+          if !options[:overwrite] && s3_exist?(bucket_to, dest)
+            STDERR.puts "Skipping s3://#{bucket_to}/#{dest} - already exists."
+          else
+            s3_to_s3(bucket_from, key, bucket_to, dest, options)
+          end
         end
       end
     else
       key_to += File.basename(key_from) if key_to[-1..-1] == "/"
-      s3_to_s3(bucket_from, key_from, bucket_to, key_to, options) unless !options[:overwrite] && s3_exist?(bucket_to, key_to)
+      if !options[:overwrite] && s3_exist?(bucket_to, key_to)
+        STDERR.puts "Skipping s3://#{bucket_to}/#{key_to} - already exists."
+      else
+        s3_to_s3(bucket_from, key_from, bucket_to, key_to, options)
+      end
     end
   when :local_to_s3
     if options[:recursive]
@@ -502,12 +510,20 @@ def copy(from, to, options)
           #puts "no_slash(key_to) #{no_slash(key_to)}"
           #puts "relative(from, f) #{relative(from, f)}"
           key = key_path key_to, relative(from, f)
-          local_to_s3(bucket_to, key, File.expand_path(f), options) unless !options[:overwrite] && s3_exist?(bucket_to, key)
+          if !options[:overwrite] && s3_exist?(bucket_to, key)
+            STDERR.puts "Skipping s3://#{bucket_to}/#{key} - already exists."
+          else
+            local_to_s3(bucket_to, key, File.expand_path(f), options)
+          end
         end
       end
     else
       key_to += File.basename(from) if key_to[-1..-1] == "/"
-      local_to_s3(bucket_to, key_to, File.expand_path(from), options) unless !options[:overwrite] && s3_exist?(bucket_to, key_to)
+      if !options[:overwrite] && s3_exist?(bucket_to, key_to)
+        STDERR.puts "Skipping s3://#{bucket_to}/#{key_to} - already exists."
+      else
+        local_to_s3(bucket_to, key_to, File.expand_path(from), options)
+      end
     end
   when :s3_to_local
     if options[:recursive]
@@ -522,13 +538,21 @@ def copy(from, to, options)
           dir = File.dirname(dest)
           FileUtils.mkdir_p dir unless File.exist? dir
           fail "Destination path is not a directory: #{dir}" unless File.directory?(dir)
-          s3_to_local(bucket_from, key, dest, options) unless !options[:overwrite] && File.exist?(dest)
+          if !options[:overwrite] && File.exist?(dest)
+            STDERR.puts "Skipping #{dest} - already exists."
+          else
+            s3_to_local(bucket_from, key, dest, options)
+          end
         end
       end
     else
       dest = File.expand_path(to)
       dest = File.join(dest, File.basename(key_from)) if File.directory?(dest)
-      s3_to_local(bucket_from, key_from, dest, options) unless !options[:overwrite] && File.exist?(dest)
+      if !options[:overwrite] && File.exist?(dest)
+        STDERR.puts "Skipping #{dest} - already exists."
+      else
+        s3_to_local(bucket_from, key_from, dest, options)
+      end
     end
   when :local_to_local
     if options[:include_regex].any? || options[:exclude_regex].any?

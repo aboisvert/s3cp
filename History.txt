@@ -1,3 +1,9 @@
+=== 1.1.27 (2013-04-04)
+
+* Fixed:  Fixed [NoMethodError] undefined method 'exist?' in s3cp when using
+          --no-overwrite option (residual bug from RightAWS -> AWS SDK migration).
+          s3cp now prints message on STDERR when skipping files that already exists.
+
 === 1.1.26 (2013-03-21)
 
 * Fixed:  Prevent crash if $terminal.output_rows can't be determined in s3ls/s3tree.
