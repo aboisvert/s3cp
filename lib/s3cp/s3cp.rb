@@ -438,7 +438,7 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
 end
 
 def s3_exist?(bucket, key)
-  @s3.buckets[bucket].objects[key].exist?
+  @s3.buckets[bucket].objects[key].exists?
 end
 
 def s3_checksum(bucket, key)
