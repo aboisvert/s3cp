@@ -31,6 +31,14 @@ op = OptionParser.new do |opts|
     options[:debug] = true
   end
 
+  opts.on("--create BUCKET_NAME", "Create bucket") do |bucket|
+    options[:create] = bucket
+  end
+
+  opts.on("--acl ACL", "ACL of new bucket. e.g., private, public_read, public_read_write, authenticated_read, log_delivery_write") do |acl|
+    options[:acl] = acl
+  end
+
   opts.on_tail("-h", "--help", "Show this message") do
     puts op
     exit
@@ -40,10 +48,20 @@ op.parse!(ARGV)
 
 S3CP.load_config()
 
+s3 = S3CP.connect()
 begin
-  s3 = S3CP.connect()
-  s3.buckets.each do |bucket|
-    puts bucket.name
+  if options[:create]
+    name = options[:create]
+    create_options = {}
+    create_options[:acl] = options[:acl] if options[:acl]
+    p "options #{create_options.inspect}"
+    puts "Creating bucket #{name} ..."
+    s3.buckets.create(name, create_options)
+    puts "Bucket #{name} created."
+  else
+    s3.buckets.each do |bucket|
+      puts bucket.name
+    end
   end
 rescue => e
   $stderr.print "s3buckets: [#{e.class}] #{e.message}\n"
