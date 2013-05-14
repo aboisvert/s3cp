@@ -93,7 +93,7 @@ begin
     S3CP.set_header_options(s3_options, @headers)
     s3_options[:acl] = options[:acl]
     @s3.buckets[bucket].objects[key].write(temp, s3_options)
-    STDERR.puts "s3://#{bucket}/#{key} => #{S3CP.format_filesize(temp.size)} "
+    $stderr.puts "s3://#{bucket}/#{key} => #{S3CP.format_filesize(temp.size)} "
   ensure
     # cleanup
     temp.close

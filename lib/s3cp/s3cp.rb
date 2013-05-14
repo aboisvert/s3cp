@@ -148,12 +148,12 @@ if ARGV.size < 2
 end
 
 if options[:include_regex].any? && !options[:recursive]
-  STDERR.puts "-i (--include regex) option requires -r (recursive) option."
+  $stderr.puts "-i (--include regex) option requires -r (recursive) option."
   exit(1)
 end
 
 if options[:exclude_regex].any? && !options[:recursive]
-  STDERR.puts "-x (--exclude regex) option requires -r (recursive) option."
+  $stderr.puts "-x (--exclude regex) option requires -r (recursive) option."
   exit(1)
 end
 
@@ -161,9 +161,9 @@ destination = ARGV.last
 sources = ARGV[0..-2]
 
 if options[:debug]
-  STDERR.puts "sources: #{sources.inspect}"
-  STDERR.puts "destination: #{destination}"
-  STDERR.puts "Options: \n#{options.inspect}"
+  $stderr.puts "sources: #{sources.inspect}"
+  $stderr.puts "destination: #{destination}"
+  $stderr.puts "Options: \n#{options.inspect}"
 end
 
 class ProxyIO
@@ -282,7 +282,7 @@ def local_to_s3(bucket_to, key, file, options = {})
     when :not_found
       nil
     when :invalid
-      STDERR.puts "Warning: No MD5 checksum available and ETag not suitable due to multi-part upload; file will be force-copied."
+      $stderr.puts "Warning: No MD5 checksum available and ETag not suitable due to multi-part upload; file will be force-copied."
       nil
     else
       md5
@@ -297,7 +297,7 @@ def local_to_s3(bucket_to, key, file, options = {})
       end
       if retries > 0
         delay = options[:retry_delay] * (options[:retry_backoff] ** retries)
-        STDERR.puts "Sleeping #{"%0.2f" % delay} seconds.  Will retry #{options[:retries] - retries} more time(s)."
+        $stderr.puts "Sleeping #{"%0.2f" % delay} seconds.  Will retry #{options[:retries] - retries} more time(s)."
         sleep delay
       end
 
@@ -338,10 +338,10 @@ def local_to_s3(bucket_to, key, file, options = {})
           actual_md5 = s3_checksum(bucket_to, key)
           if actual_md5.is_a? String
             if actual_md5 != expected_md5
-              STDERR.puts "Warning: invalid MD5 checksum.  Expected: #{expected_md5} Actual: #{actual_md5}"
+              $stderr.puts "Warning: invalid MD5 checksum.  Expected: #{expected_md5} Actual: #{actual_md5}"
             end
           else
-            STDERR.puts "Warning: invalid MD5 checksum in metadata: #{actual_md5.inspect}; skipped checksum verification."
+            $stderr.puts "Warning: invalid MD5 checksum in metadata: #{actual_md5.inspect}; skipped checksum verification."
             actual_md5 = nil
           end
         end
@@ -349,10 +349,10 @@ def local_to_s3(bucket_to, key, file, options = {})
         actual_md5 = "bad"
         if progress_bar
           progress_bar.clear
-          STDERR.puts "Error copying #{file} to s3://#{bucket_to}/#{key}"
+          $stderr.puts "Error copying #{file} to s3://#{bucket_to}/#{key}"
         end
         raise e if !options[:checksum] || e.is_a?(AWS::S3::Errors::AccessDenied)
-        STDERR.puts e
+        $stderr.puts e
       end
       retries += 1
     end until options[:checksum] == false || actual_md5.nil? || expected_md5 == actual_md5
@@ -374,17 +374,17 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
     if retries > 0
       delay = options[:retry_delay] * (options[:retry_backoff] ** retries)
       delay = delay.to_i
-      STDERR.puts "Sleeping #{"%0.2f" % delay} seconds.  Will retry #{options[:retries] - retries} more time(s)."
+      $stderr.puts "Sleeping #{"%0.2f" % delay} seconds.  Will retry #{options[:retries] - retries} more time(s)."
       sleep delay
     end
     begin
       expected_md5 = if options[:checksum] || options[:sync]
         md5 = s3_checksum(bucket_from, key_from)
         if options[:sync] && !md5.is_a?(String)
-          STDERR.puts "Warning: invalid MD5 checksum in metadata; file will be force-copied."
+          $stderr.puts "Warning: invalid MD5 checksum in metadata; file will be force-copied."
           nil
         elsif !md5.is_a? String
-          STDERR.puts "Warning: invalid MD5 checksum in metadata; skipped checksum verification."
+          $stderr.puts "Warning: invalid MD5 checksum in metadata; skipped checksum verification."
           nil
         else
           md5
@@ -421,13 +421,13 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
       end
     rescue => e
       raise e unless options[:checksum]
-      STDERR.puts e
+      $stderr.puts e
     end
 
     if options[:checksum] && expected_md5 != nil
       actual_md5 = S3CP.md5(dest)
       if actual_md5 != expected_md5
-        STDERR.puts "Warning: invalid MD5 checksum.  Expected: #{expected_md5} Actual: #{actual_md5}"
+        $stderr.puts "Warning: invalid MD5 checksum.  Expected: #{expected_md5} Actual: #{actual_md5}"
       end
     end
 
@@ -487,7 +487,7 @@ def copy(from, to, options)
         if match(key)
           dest = key_path key_to, relative(key_from, key)
           if !options[:overwrite] && s3_exist?(bucket_to, dest)
-            STDERR.puts "Skipping s3://#{bucket_to}/#{dest} - already exists."
+            $stderr.puts "Skipping s3://#{bucket_to}/#{dest} - already exists."
           else
             s3_to_s3(bucket_from, key, bucket_to, dest, options)
           end
@@ -496,7 +496,7 @@ def copy(from, to, options)
     else
       key_to += File.basename(key_from) if key_to[-1..-1] == "/"
       if !options[:overwrite] && s3_exist?(bucket_to, key_to)
-        STDERR.puts "Skipping s3://#{bucket_to}/#{key_to} - already exists."
+        $stderr.puts "Skipping s3://#{bucket_to}/#{key_to} - already exists."
       else
         s3_to_s3(bucket_from, key_from, bucket_to, key_to, options)
       end
@@ -511,7 +511,7 @@ def copy(from, to, options)
           #puts "relative(from, f) #{relative(from, f)}"
           key = key_path key_to, relative(from, f)
           if !options[:overwrite] && s3_exist?(bucket_to, key)
-            STDERR.puts "Skipping s3://#{bucket_to}/#{key} - already exists."
+            $stderr.puts "Skipping s3://#{bucket_to}/#{key} - already exists."
           else
             local_to_s3(bucket_to, key, File.expand_path(f), options)
           end
@@ -520,7 +520,7 @@ def copy(from, to, options)
     else
       key_to += File.basename(from) if key_to[-1..-1] == "/"
       if !options[:overwrite] && s3_exist?(bucket_to, key_to)
-        STDERR.puts "Skipping s3://#{bucket_to}/#{key_to} - already exists."
+        $stderr.puts "Skipping s3://#{bucket_to}/#{key_to} - already exists."
       else
         local_to_s3(bucket_to, key_to, File.expand_path(from), options)
       end
@@ -539,7 +539,7 @@ def copy(from, to, options)
           FileUtils.mkdir_p dir unless File.exist? dir
           fail "Destination path is not a directory: #{dir}" unless File.directory?(dir)
           if !options[:overwrite] && File.exist?(dest)
-            STDERR.puts "Skipping #{dest} - already exists."
+            $stderr.puts "Skipping #{dest} - already exists."
           else
             s3_to_local(bucket_from, key, dest, options)
           end
@@ -549,7 +549,7 @@ def copy(from, to, options)
       dest = File.expand_path(to)
       dest = File.join(dest, File.basename(key_from)) if File.directory?(dest)
       if !options[:overwrite] && File.exist?(dest)
-        STDERR.puts "Skipping #{dest} - already exists."
+        $stderr.puts "Skipping #{dest} - already exists."
       else
         s3_to_local(bucket_from, key_from, dest, options)
       end

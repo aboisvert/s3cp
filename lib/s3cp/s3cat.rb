@@ -134,7 +134,7 @@ begin
   else
     @s3.objects[@prefix].read_as_stream(read_options) do |chunk|
       begin
-        STDOUT.print(chunk)
+        $stdout.print(chunk)
       rescue Errno::EPIPE
         break
       end
