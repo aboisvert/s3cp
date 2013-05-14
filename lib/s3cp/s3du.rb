@@ -67,9 +67,6 @@ url = ARGV[0]
 @bucket, @prefix = S3CP.bucket_and_key(url)
 fail "Your URL looks funny, doesn't it?" unless @bucket
 
-S3CP.load_config()
-
-@s3 = S3CP.connect()
 
 def depth(path)
   path.count("/")
@@ -98,56 +95,57 @@ def print(key, size)
   puts ("%#{7 + @options[:precision]}s " % size) + key
 end
 
-begin
-  s3_options = Hash.new
-  s3_options[:bucket_name] = @bucket
-  s3_options[:prefix] = @prefix
+S3CP.standard_exception_handling(options) do
+
+  S3CP.load_config()
+  @s3 = S3CP.connect()
 
   begin
-    response = @s3.client.list_objects(s3_options)
-    response[:contents].each do |object|
+    s3_options = Hash.new
+    s3_options[:bucket_name] = @bucket
+    s3_options[:prefix] = @prefix
 
-      key  = object[:key]
-      size = object[:size].to_i
+    begin
+      response = @s3.client.list_objects(s3_options)
+      response[:contents].each do |object|
 
-      if options[:regex].nil? || options[:regex].match(key)
-        current_key = if actual_depth
-          pos = nth_occurrence(key, "/", actual_depth)
-          (pos != -1) ? key[0..pos-1] : key
+        key  = object[:key]
+        size = object[:size].to_i
+
+        if options[:regex].nil? || options[:regex].match(key)
+          current_key = if actual_depth
+            pos = nth_occurrence(key, "/", actual_depth)
+            (pos != -1) ? key[0..pos-1] : key
+          end
+
+          if (last_key && last_key != current_key)
+            print(last_key, subtotal_size)
+            subtotal_size = size
+          else
+            subtotal_size += size
+          end
+
+          last_key = current_key
+          total_size += size
         end
-
-        if (last_key && last_key != current_key)
-          print(last_key, subtotal_size)
-          subtotal_size = size
-        else
-          subtotal_size += size
-        end
-
-        last_key = current_key
-        total_size += size
       end
+
+      break if response[:contents].empty?
+
+      s3_options.merge!(:marker => response[:contents].last[:key])
+    end while response[:truncated]
+
+    if last_key != nil
+      print(last_key, subtotal_size)
     end
 
-    break if response[:contents].empty?
-
-    s3_options.merge!(:marker => response[:contents].last[:key])
-  end while response[:truncated]
-
-  if last_key != nil
-    print(last_key, subtotal_size)
-  end
-
-  if options[:depth] > 0
-    print("", total_size)
-  else
-    puts S3CP.format_filesize(total_size, :unit => options[:unit], :precision => options[:precision])
-  end
-rescue Errno::EPIPE
-  # ignore
-rescue => e
-  $stderr.print "s3du: [#{e.class}] #{e.message}\n"
-  if options[:debug]
-    $stderr.print e.backtrace.join("\n") + "\n"
+    if options[:depth] > 0
+      print("", total_size)
+    else
+      puts S3CP.format_filesize(total_size, :unit => options[:unit], :precision => options[:precision])
+    end
+  rescue Errno::EPIPE
+    # ignore
   end
 end
 

@@ -568,13 +568,8 @@ def copy(from, to, options)
   end
 end
 
-begin
+S3CP.standard_exception_handling(options) do
   sources.each do |source|
     copy(source, destination, options)
-  end
-rescue => e
-  $stderr.print "s3cp: [#{e.class}] #{e.message}\n"
-  if options[:debug]
-    $stderr.print e.backtrace.join("\n") + "\n"
   end
 end

@@ -73,7 +73,7 @@ if options[:debug]
   puts "Options: \n#{options.inspect}"
 end
 
-begin
+S3CP.standard_exception_handling(options) do
   @bucket, @prefix = S3CP.bucket_and_key(url)
   fail "Your URL looks funny, doesn't it?" unless @bucket
 
@@ -139,12 +139,6 @@ begin
         break
       end
     end
-  end
-
-rescue => e
-  $stderr.print "s3cat: [#{e.class}] #{e.message}\n"
-  if options[:debug]
-    $stderr.print e.backtrace.join("\n") + "\n"
   end
 end
 

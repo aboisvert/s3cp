@@ -45,19 +45,21 @@ permission = ARGV.last
 @bucket, @key = S3CP.bucket_and_key(source)
 fail "Your URL looks funny, doesn't it?" unless @bucket
 
-S3CP.load_config()
+S3CP.standard_exception_handling(options) do
+  S3CP.load_config()
 
-@s3 = S3CP.connect().buckets[@bucket]
+  @s3 = S3CP.connect().buckets[@bucket]
 
-obj = @s3.objects[@key]
+  obj = @s3.objects[@key]
 
-metadata = obj.head
-metadata.to_h.keys.sort { |k1, k2| k1.to_s <=> k2.to_s}.each do |k|
-  puts "#{"%30s" % k} #{metadata[k].is_a?(Hash) ? metadata[k].inspect : metadata[k].to_s}"
-end
+  metadata = obj.head
+  metadata.to_h.keys.sort { |k1, k2| k1.to_s <=> k2.to_s}.each do |k|
+    puts "#{"%30s" % k} #{metadata[k].is_a?(Hash) ? metadata[k].inspect : metadata[k].to_s}"
+  end
 
-if @options[:acl]
-  puts
-  xml = Nokogiri::XML(obj.acl.to_s)
-  puts xml.to_s
+  if @options[:acl]
+    puts
+    xml = Nokogiri::XML(obj.acl.to_s)
+    puts xml.to_s
+  end
 end

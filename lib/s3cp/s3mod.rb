@@ -91,7 +91,7 @@ if !options[:acl] && paths.size > 1 && S3CP::LEGAL_MODS.include?(paths.last)
   options[:acl] = S3CP.validate_acl(paths.pop);
 end
 
-begin
+S3CP.standard_exception_handling(options) do
   S3CP.load_config()
   @s3 = S3CP.connect()
 
@@ -111,10 +111,5 @@ begin
         obj.acl = options[:acl]
       end
     }
-  end
-rescue => e
-  $stderr.print "s3mod: [#{e.class}] #{e.message}\n"
-  if options[:debug]
-    $stderr.print e.backtrace.join("\n") + "\n"
   end
 end

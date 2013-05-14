@@ -90,75 +90,74 @@ if options[:debug]
   puts "key #{@key}"
 end
 
-S3CP.load_config()
-
-@s3 = S3CP.connect()
 
 keys = 0
 rows = 0
 directories = true
 
-begin
-  display = lambda do |entry|
-    # add '---' separator line between directories and files
-    if options[:delimiter] && directories && entry.is_a?(AWS::S3::Tree::LeafNode)
-      directories = false
-      puts "---"
-    end
+S3CP.standard_exception_handling(options) do
 
-    key = "s3://#{@bucket}/#{entry.respond_to?(:key) ? entry.key : entry.prefix}"
-    if options[:long_format] && entry.last_modified && entry.content_length
-      size = entry.content_length
-      size = S3CP.format_filesize(size, :unit => options[:unit], :precision => options[:precision])
-      size = ("%#{7 + options[:precision]}s " % size)
-      puts "#{entry.last_modified.strftime(options[:date_format])} #{size} #{key}"
-    else
-      puts key
-    end
-    rows += 1
-    keys += 1
-    response = ''
+  S3CP.load_config()
 
-    if options[:rows_per_page] && (rows % options[:rows_per_page] == 0)
-      begin
-        print "Continue? (Y/n) "
-        response = STDIN.gets.chomp.downcase
-      end until response == 'n' || response == 'y' || response == ''
-    end
-    (response == 'n')
-  end
+  @s3 = S3CP.connect()
 
-  if options[:delimiter]
-    @s3.buckets[@bucket].objects.with_prefix(@key).as_tree(:delimier => options[:delimiter], :append => false).children.each do |entry|
-      break if display.call(entry)
-    end
-  else
-    Struct.new("S3Entry", :key, :last_modified, :content_length)
-
-    s3_options = Hash.new
-    s3_options[:bucket_name] = @bucket
-    s3_options[:prefix] = @key
-    s3_options[:limit] = options[:max_keys] if options[:max_keys]
-
-    stop = false
-
-    begin
-      response = @s3.client.list_objects(s3_options)
-      response[:contents].each do |object|
-        entry = Struct::S3Entry.new(object[:key], object[:last_modified], object[:size].to_i)
-        stop = display.call(entry)
-        break if stop
+  begin
+    display = lambda do |entry|
+      # add '---' separator line between directories and files
+      if options[:delimiter] && directories && entry.is_a?(AWS::S3::Tree::LeafNode)
+        directories = false
+        puts "---"
       end
-      break if stop || response[:contents].empty?
-      s3_options.merge!(:marker => response[:contents].last[:key])
-    end while response[:truncated]
-  end
-rescue Errno::EPIPE
-  # ignore
-rescue => e
-  $stderr.print "s3ls: [#{e.class}] #{e.message}\n"
-  if options[:debug]
-    $stderr.print e.backtrace.join("\n") + "\n"
+
+      key = "s3://#{@bucket}/#{entry.respond_to?(:key) ? entry.key : entry.prefix}"
+      if options[:long_format] && entry.last_modified && entry.content_length
+        size = entry.content_length
+        size = S3CP.format_filesize(size, :unit => options[:unit], :precision => options[:precision])
+        size = ("%#{7 + options[:precision]}s " % size)
+        puts "#{entry.last_modified.strftime(options[:date_format])} #{size} #{key}"
+      else
+        puts key
+      end
+      rows += 1
+      keys += 1
+      response = ''
+
+      if options[:rows_per_page] && (rows % options[:rows_per_page] == 0)
+        begin
+          print "Continue? (Y/n) "
+          response = STDIN.gets.chomp.downcase
+        end until response == 'n' || response == 'y' || response == ''
+      end
+      (response == 'n')
+    end
+
+    if options[:delimiter]
+      @s3.buckets[@bucket].objects.with_prefix(@key).as_tree(:delimier => options[:delimiter], :append => false).children.each do |entry|
+        break if display.call(entry)
+      end
+    else
+      Struct.new("S3Entry", :key, :last_modified, :content_length)
+
+      s3_options = Hash.new
+      s3_options[:bucket_name] = @bucket
+      s3_options[:prefix] = @key
+      s3_options[:limit] = options[:max_keys] if options[:max_keys]
+
+      stop = false
+
+      begin
+        response = @s3.client.list_objects(s3_options)
+        response[:contents].each do |object|
+          entry = Struct::S3Entry.new(object[:key], object[:last_modified], object[:size].to_i)
+          stop = display.call(entry)
+          break if stop
+        end
+        break if stop || response[:contents].empty?
+        s3_options.merge!(:marker => response[:contents].last[:key])
+      end while response[:truncated]
+    end
+  rescue Errno::EPIPE
+    # ignore
   end
 end
 

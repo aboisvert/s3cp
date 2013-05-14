@@ -58,10 +58,11 @@ op = OptionParser.new do |opts|
 end
 op.parse!(ARGV)
 
-S3CP.load_config()
+S3CP.standard_exception_handling(options) do
 
-s3 = S3CP.connect()
-begin
+  S3CP.load_config()
+  s3 = S3CP.connect()
+
   if options[:create]
     name = options[:create]
     create_options = {}
@@ -81,11 +82,6 @@ begin
     s3.buckets.each do |bucket|
       puts bucket.name
     end
-  end
-rescue => e
-  $stderr.print "s3buckets: [#{e.class}] #{e.message}\n"
-  if options[:debug]
-    $stderr.print e.backtrace.join("\n") + "\n"
   end
 end
 
