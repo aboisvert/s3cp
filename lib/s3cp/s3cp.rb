@@ -364,6 +364,7 @@ end
 
 def s3_to_local(bucket_from, key_from, dest, options = {})
   log("#{operation(options)} s3://#{bucket_from}/#{key_from} to #{dest}")
+  raise ArgumentError, "source key may not be blank" if key_from.to_s.empty?
 
   retries = 0
   begin
@@ -420,6 +421,7 @@ def s3_to_local(bucket_from, key_from, dest, options = {})
         return
       end
     rescue => e
+      raise e if e.is_a?(AWS::S3::Errors::NoSuchKey)
       raise e unless options[:checksum]
       $stderr.puts e
     end
