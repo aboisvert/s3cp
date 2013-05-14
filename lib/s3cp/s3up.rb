@@ -69,9 +69,8 @@ url = ARGV[0]
 bucket, key = S3CP.bucket_and_key(url)
 fail "Your URL looks funny, doesn't it?" unless bucket
 
-begin
+S3CP.standard_exception_handling(options) do
   S3CP.load_config()
-
   @s3 = S3CP.connect()
 
   # copy all of STDIN to a temp file
@@ -98,11 +97,6 @@ begin
     # cleanup
     temp.close
     temp.delete
-  end
-rescue => e
-  $stderr.print "s3up: [#{e.class}] #{e.message}\n"
-  if options[:debug]
-    $stderr.print e.backtrace.join("\n") + "\n"
   end
 end
 

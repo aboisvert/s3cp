@@ -71,9 +71,6 @@ if ARGV.size == 0
   exit
 end
 
-S3CP.load_config()
-@s3 = S3CP.connect()
-
 def time_or_date_str(msg, t)
   if t.is_a?(Fixnum) || t.to_s =~ /^\d+$/
     "%s after %d days" % [msg, t.to_i]
@@ -91,83 +88,88 @@ def rule_to_str(r)
     [ r.prefix || "[root]", r.id, r.status, "???"]
   end
 end
+S3CP.standard_exception_handling(options) do
 
-paths.each do |path|
-  bucket,key = S3CP.bucket_and_key(path)
-  fail "Invalid bucket/key: #{path}" unless key
+  S3CP.load_config()
+  @s3 = S3CP.connect()
 
-  case
+  paths.each do |path|
+    bucket,key = S3CP.bucket_and_key(path)
+    fail "Invalid bucket/key: #{path}" unless key
 
-    when options[:expire]
-      @s3.buckets[bucket].lifecycle_configuration.update do
-        rule_options = {}
-        rule_options[:id] = options[:name] if options[:name]
-        rule_options[:expiration_time] = S3CP.parse_days_or_date(options[:expire])
-        add_rule(key, rule_options)
-      end
+    case
 
-    when options[:glacier]
-      @s3.buckets[bucket].lifecycle_configuration.update do
-        rule_options = {}
-        rule_options[:id] = options[:name] if options[:name]
-        rule_options[:glacier_transition_time] = S3CP.parse_days_or_date(options[:glacier])
-        add_rule(key, rule_options)
-      end
+      when options[:expire]
+        @s3.buckets[bucket].lifecycle_configuration.update do
+          rule_options = {}
+          rule_options[:id] = options[:name] if options[:name]
+          rule_options[:expiration_time] = S3CP.parse_days_or_date(options[:expire])
+          add_rule(key, rule_options)
+        end
 
-    when options[:enable]
-      success = false
-      @s3.buckets[bucket].lifecycle_configuration.update do
-        self.rules.each do |r|
-          if (r.prefix == key) || (r.id == options[:name])
-            r.enable!
-            puts "Enabled rule: "
-            puts S3CP.tableify([rule_to_str(r)])
-            success = true
+      when options[:glacier]
+        @s3.buckets[bucket].lifecycle_configuration.update do
+          rule_options = {}
+          rule_options[:id] = options[:name] if options[:name]
+          rule_options[:glacier_transition_time] = S3CP.parse_days_or_date(options[:glacier])
+          add_rule(key, rule_options)
+        end
+
+      when options[:enable]
+        success = false
+        @s3.buckets[bucket].lifecycle_configuration.update do
+          self.rules.each do |r|
+            if (r.prefix == key) || (r.id == options[:name])
+              r.enable!
+              puts "Enabled rule: "
+              puts S3CP.tableify([rule_to_str(r)])
+              success = true
+            end
           end
         end
-      end
-      fail "Rule or prefix not found" unless success
+        fail "Rule or prefix not found" unless success
 
-    when options[:disable]
-      success = false
-      @s3.buckets[bucket].lifecycle_configuration.update do
-        self.rules.each do |r|
-          if (r.prefix == key) || (r.id == options[:name])
-            r.disabled!
-            puts "Disabled rule: "
-            puts S3CP.tableify([rule_to_str(r)])
-            success = true
+      when options[:disable]
+        success = false
+        @s3.buckets[bucket].lifecycle_configuration.update do
+          self.rules.each do |r|
+            if (r.prefix == key) || (r.id == options[:name])
+              r.disabled!
+              puts "Disabled rule: "
+              puts S3CP.tableify([rule_to_str(r)])
+              success = true
+            end
           end
         end
-      end
-      fail "Rule or prefix not found" unless success
+        fail "Rule or prefix not found" unless success
 
-    when options[:delete]
-      success = false
-      @s3.buckets[bucket].lifecycle_configuration.update do
-        self.rules.each do |r|
-          if (r.prefix == key) || (r.id == options[:name])
-            remove_rule(r)
-            puts "Deleted rule: "
-            puts S3CP.tableify([rule_to_str(r)])
-            success = true
+      when options[:delete]
+        success = false
+        @s3.buckets[bucket].lifecycle_configuration.update do
+          self.rules.each do |r|
+            if (r.prefix == key) || (r.id == options[:name])
+              remove_rule(r)
+              puts "Deleted rule: "
+              puts S3CP.tableify([rule_to_str(r)])
+              success = true
+            end
           end
         end
-      end
-      fail "Rule or prefix not found" unless success
+        fail "Rule or prefix not found" unless success
 
-    else
-      rules = @s3.buckets[bucket].lifecycle_configuration.rules.to_a
-      if rules.empty?
-        puts "#{bucket} - no lifecycle rules"
       else
-        puts "#{bucket} - lifecycle rules:"
-        begin
-          puts S3CP.tableify(rules.map { |r| rule_to_str(r) })
-        rescue => e
-          puts rules.inspect
-          raise e
+        rules = @s3.buckets[bucket].lifecycle_configuration.rules.to_a
+        if rules.empty?
+          puts "#{bucket} - no lifecycle rules"
+        else
+          puts "#{bucket} - lifecycle rules:"
+          begin
+            puts S3CP.tableify(rules.map { |r| rule_to_str(r) })
+          rescue => e
+            puts rules.inspect
+            raise e
+          end
         end
-      end
+    end
   end
 end

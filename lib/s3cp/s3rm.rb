@@ -102,7 +102,7 @@ end
 include_regex = options[:include_regex] ? Regexp.new(options[:include_regex]) : nil
 exclude_regex = options[:exclude_regex] ? Regexp.new(options[:exclude_regex]) : nil
 
-begin
+S3CP.standard_exception_handling(options) do
   S3CP.load_config()
 
   @s3 = S3CP.connect()
@@ -146,11 +146,6 @@ begin
       puts e.to_s
       raise e unless e.is_a? AWS::S3::Errors::NoSuchKey
     end
-  end
-rescue => e
-  $stderr.print "s3rm: [#{e.class}] #{e.message}\n"
-  if options[:debug]
-    $stderr.print e.backtrace.join("\n") + "\n"
   end
 end
 

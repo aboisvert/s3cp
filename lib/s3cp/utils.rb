@@ -250,6 +250,20 @@ module S3CP
       yield bucket.objects[key]
     end
   end
+
+  def standard_exception_handling(options)
+    begin
+      yield
+    rescue Exception => ex
+      cmd_name ||= File.basename(caller[1].split(/:/)[0], '.*')
+      $stderr.print "#{cmd_name} [#{ex.class}] #{ex.message}\n"
+      if options[:debug]
+        $stderr.print ex.backtrace.join("\n") + "\n"
+      end
+      exit 1
+    end
+  end
+
 end
 
 # Monkey-patch S3 object for download streaming
