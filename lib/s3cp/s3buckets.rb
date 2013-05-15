@@ -35,6 +35,18 @@ op = OptionParser.new do |opts|
     options[:create] = bucket
   end
 
+  opts.on("--delete BUCKET_NAME", "Delete an empty bucket") do |bucket|
+    options[:delete] = bucket
+  end
+
+  opts.on("--enable-versioning BUCKET_NAME", "Enable versioning on bucket") do |bucket|
+    options[:enable_versioning] = bucket
+  end
+
+  opts.on("--suspend-versioning BUCKET_NAME", "Suspend versioning on bucket") do |bucket|
+    options[:suspend_versioning] = bucket
+  end
+
   opts.on("--acl ACL", "ACL of new bucket. e.g., private, public_read, public_read_write, authenticated_read, log_delivery_write") do |acl|
     options[:acl] = acl
   end
@@ -54,10 +66,17 @@ begin
     name = options[:create]
     create_options = {}
     create_options[:acl] = options[:acl] if options[:acl]
-    p "options #{create_options.inspect}"
-    puts "Creating bucket #{name} ..."
     s3.buckets.create(name, create_options)
     puts "Bucket #{name} created."
+  elsif options[:delete]
+    name = options[:delete]
+    s3.buckets[name].delete()
+  elsif options[:enable_versioning]
+    name = options[:enable_versioning]
+    s3.buckets[name].enable_versioning()
+  elsif options[:suspend_versioning]
+    name = options[:suspend_versioning]
+    s3.buckets[name].suspend_versioning()
   else
     s3.buckets.each do |bucket|
       puts bucket.name

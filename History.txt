@@ -1,6 +1,17 @@
+=== 1.1.29 (2013-05-15)
+
+* Added:  s3buckets command may now be used to delete buckets and enable/suspend
+          versioning on bucket.
+
+          % s3buckets --delete my-bucket
+
+          % s3buckets --enable-versioning my-bucket
+
+          % s3buckets --suspend-versioning my-bucket
+
 === 1.1.28 (2013-05-07)
 
-* Added:  s3buckets command may not be used to create buckets.
+* Added:  s3buckets command may now be used to create buckets.
 
           % S3CP_REGION="eu-west-1" s3buckets --create super-bucket --acl public_read
 
