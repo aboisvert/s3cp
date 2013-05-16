@@ -45,7 +45,7 @@ permission = ARGV.last
 @bucket, @key = S3CP.bucket_and_key(source)
 fail "Your URL looks funny, doesn't it?" unless @bucket
 
-S3CP.standard_exception_handling(options) do
+S3CP.standard_exception_handling(@options) do
   S3CP.load_config()
 
   @s3 = S3CP.connect().buckets[@bucket]

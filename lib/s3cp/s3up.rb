@@ -90,7 +90,7 @@ S3CP.standard_exception_handling(options) do
   begin
     s3_options = {}
     S3CP.set_header_options(s3_options, @headers)
-    s3_options[:acl] = options[:acl]
+    s3_options[:acl] = options[:acl] if options[:acl]
     @s3.buckets[bucket].objects[key].write(temp, s3_options)
     $stderr.puts "s3://#{bucket}/#{key} => #{S3CP.format_filesize(temp.size)} "
   ensure

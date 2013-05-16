@@ -1,3 +1,8 @@
+=== 1.1.31 (2013-05-16)
+
+* Fixed:  Passing ACLs to s3cp using --header 'x-amz-acl: public-read' was broken
+          since 1.1.24.
+
 === 1.1.30 (2013-05-15)
 
 * Changed:  Improved error handling -- all commands now exit with non-zero exit
