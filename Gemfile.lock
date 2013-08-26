@@ -1,10 +1,11 @@
 PATH
   remote: .
   specs:
-    s3cp (1.1.31)
+    s3cp (1.1.32)
       aws-sdk (~> 1.8.3)
       extensions (~> 0.6)
       highline (>= 1.5.1)
+      nokogiri (~> 1.5.10)
       progressbar (~> 0.10.0)
 
 GEM
@@ -18,7 +19,7 @@ GEM
     extensions (0.6.0)
     highline (1.6.19)
     json (1.8.0)
-    nokogiri (1.5.9)
+    nokogiri (1.5.10)
     progressbar (0.10.0)
     rake (0.8.7)
     rspec (2.5.0)
