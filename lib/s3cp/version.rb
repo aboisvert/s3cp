@@ -16,5 +16,5 @@
 # the License.
 
 module S3CP
-  VERSION = "1.1.33"
+  VERSION = "1.1.34"
 end
