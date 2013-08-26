@@ -1,3 +1,6 @@
+=== 1.1.35 (2013-08-26)
+* Fixed:  Really fix bug introduced in v1.1.32.
+
 === 1.1.34 (2013-08-26)
 * Fixed:  "custom_require [TypeError] can't convert nil into String" introduced
           in v1.1.32.
