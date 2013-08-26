@@ -1,3 +1,44 @@
+=== 1.1.32 (2013-08-26)
+
+* Added:  New --mkdir option on s3cp allowing to recreate the source directory
+          structure from any point in the source path(s).
+
+          The --mkdir option accepts a regular expression to match against the
+          source path(s) and will recreate the source directory structure from
+          the match point.
+
+          Assuming the following bucket content,
+
+          s3://bucket/foo/bar/1
+          s3://bucket/foo/bar/2
+          s3://bucket/foo/baz/3
+          s3://bucket/foo/baz/4
+
+          then running:
+
+          % s3cp --recursive --mkdir /foo/  s3://bucket/foo/bar .
+
+          would create the following local directories and files:
+
+          ./foo/bar/1
+          ./foo/bar/2
+
+          If the regular expression contains a capturing group, the destination
+          path(s) will be relative to the group's starting position instead of
+          the regular expression's matching position:
+
+          % s3cp --recursive --mkdir "/foo/(.)"  s3://bucket/foo/ .
+
+          would create the following local content:
+
+          ./bar/1
+          ./bar/2
+          ./baz/3
+          ./baz/4
+
+          Note: The --mkdir option is currently only valid when copying from S3
+          to the local filesystem.
+
 === 1.1.31 (2013-05-16)
 
 * Fixed:  Passing ACLs to s3cp using --header 'x-amz-acl: public-read' was broken

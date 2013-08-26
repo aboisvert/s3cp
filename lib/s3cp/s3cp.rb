@@ -39,6 +39,7 @@ options[:include_regex] = []
 options[:exclude_regex] = []
 options[:sync] = false
 options[:move] = false
+options[:mkdir] = nil
 
 op = OptionParser.new do |opts|
   opts.banner = <<-BANNER
@@ -77,6 +78,10 @@ op = OptionParser.new do |opts|
 
   opts.on("--move", "Move mode: delete original file(s) after copying.") do
     options[:move] = true
+  end
+
+  opts.on("--mkdir MATCH", "Recreate directory structure starting at `MATCH` from source path(s)") do |prefix|
+    options[:mkdir] = Regexp.new(prefix)
   end
 
   opts.on("--max-attempts N", "Number of attempts to upload/download until checksum matches (default #{options[:retries]})") do |attempts|
@@ -232,6 +237,12 @@ end
 def relative(base, path)
   dir = base.rindex("/") ? base[0..base.rindex("/")] : ""
   no_slash(path[dir.length..-1])
+end
+
+def mkdir_relative(regex, key)
+  m = regex.match(key) or return
+  pos = m.captures.empty? ? m.begin(0) : m.begin(1)
+  suffix = key[pos..-1]
 end
 
 def log(msg)
@@ -535,8 +546,13 @@ def copy(from, to, options)
       end
       keys.each do |key|
         if match(key)
-          dest = File.expand_path(to) + '/' + relative(key_from, key)
-          dest = File.join(dest, File.basename(key)) if File.directory?(dest)
+          dest = if options[:mkdir]
+            suffix = mkdir_relative(options[:mkdir], key) or next
+            dest = File.join(File.expand_path(to), suffix)
+          else
+            dest = File.expand_path(to) + '/' + relative(key_from, key)
+            dest = File.join(dest, File.basename(key)) if File.directory?(dest)
+          end
           dir = File.dirname(dest)
           FileUtils.mkdir_p dir unless File.exist? dir
           fail "Destination path is not a directory: #{dir}" unless File.directory?(dir)
@@ -548,8 +564,16 @@ def copy(from, to, options)
         end
       end
     else
-      dest = File.expand_path(to)
-      dest = File.join(dest, File.basename(key_from)) if File.directory?(dest)
+      dest = if options[:mkdir]
+        suffix = mkdir_relative(options[:mkdir], key_from) or
+          fail("Error: The key '#{key_from}' does not match the --mkdir regular expression '#{options[:mkdir]}'")
+        dest = File.join(File.expand_path(to), suffix)
+        dir = File.dirname(dest)
+        FileUtils.mkdir_p dir unless File.exist? dir
+        dest
+      else
+        File.join(File.expand_path(to), File.basename(key_from)) if File.directory?(dest)
+      end
       if !options[:overwrite] && File.exist?(dest)
         $stderr.puts "Skipping #{dest} - already exists."
       else
@@ -575,3 +599,4 @@ S3CP.standard_exception_handling(options) do
     copy(source, destination, options)
   end
 end
+
