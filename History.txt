@@ -1,5 +1,10 @@
-=== 1.1.36 (2013-08-26)
+=== 1.1.37 (2013-08-26)
+
 * Fixed regression introduced in v1.1.33.
+
+=== 1.1.36 (2013-08-26)
+
+* Don't use; regression introduced in v1.1.33.
 
 === 1.1.35 (2013-08-26)
 
