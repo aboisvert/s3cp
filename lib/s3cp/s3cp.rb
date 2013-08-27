@@ -575,6 +575,7 @@ def copy(from, to, options)
       else
         dest = File.expand_path(to)
         dest = File.join(dest, File.basename(from)) if File.directory?(dest)
+        dest
       end
       if !options[:overwrite] && File.exist?(dest)
         $stderr.puts "Skipping #{dest} - already exists."
