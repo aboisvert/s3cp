@@ -552,6 +552,7 @@ def copy(from, to, options)
           else
             dest = File.expand_path(to) + '/' + relative(key_from, key)
             dest = File.join(dest, File.basename(key)) if File.directory?(dest)
+            dest
           end
           dir = File.dirname(dest)
           FileUtils.mkdir_p dir unless File.exist? dir
