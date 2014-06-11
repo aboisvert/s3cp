@@ -1,3 +1,10 @@
+=== 1.1.38 (2014-06-11)
+
+* Added new --storage-class option to `s3ls` that displays the backing
+  storage class (STANDARD/GLACIER).
+
+* Upgrade to aws-sdk ~> 1.36.2
+
 === 1.1.37 (2013-08-26)
 
 * Fixed regression introduced in v1.1.33.

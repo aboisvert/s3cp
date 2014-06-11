@@ -63,6 +63,11 @@ op = OptionParser.new do |opts|
     options[:precision] = precision.to_i
   end
 
+  opts.on("--storage-class", "Display storage class (implies -l long listing format)") do
+    options[:storage_class] = true
+    options[:long_format] = true
+  end
+
   opts.on_tail("-h", "--help", "Show this message") do
     puts op
     exit
@@ -114,7 +119,8 @@ S3CP.standard_exception_handling(options) do
         size = entry.content_length
         size = S3CP.format_filesize(size, :unit => options[:unit], :precision => options[:precision])
         size = ("%#{7 + options[:precision]}s " % size)
-        puts "#{entry.last_modified.strftime(options[:date_format])} #{size} #{key}"
+        storage = options[:storage_class] ? (" %-9s" % entry.storage_class) : ""
+        puts "#{entry.last_modified.strftime(options[:date_format])} #{size}#{storage} #{key}"
       else
         puts key
       end
@@ -136,7 +142,7 @@ S3CP.standard_exception_handling(options) do
         break if display.call(entry)
       end
     else
-      Struct.new("S3Entry", :key, :last_modified, :content_length)
+      Struct.new("S3Entry", :key, :last_modified, :content_length, :storage_class)
 
       s3_options = Hash.new
       s3_options[:bucket_name] = @bucket
@@ -148,7 +154,7 @@ S3CP.standard_exception_handling(options) do
       begin
         response = @s3.client.list_objects(s3_options)
         response[:contents].each do |object|
-          entry = Struct::S3Entry.new(object[:key], object[:last_modified], object[:size].to_i)
+          entry = Struct::S3Entry.new(object[:key], object[:last_modified], object[:size].to_i, object[:storage_class])
           stop = display.call(entry)
           break if stop
         end
