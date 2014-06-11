@@ -39,11 +39,11 @@ op = OptionParser.new do |opts|
     options[:edit] = edit
   end
 
-  opts.on("--head SIZE", "Download only 'head' part of the file mode, e.g. 4KB, 1024B, 2GB") do |size|
+  opts.on("--head SIZE", "Download only 'head' part of the file, e.g. 4KB, 1024B, 2GB") do |size|
     options[:head] = S3CP.size_in_bytes(size)
   end
 
-  opts.on("--tail SIZE", "Download only 'tail' part of the file mode, e.g. 4KB, 1024B, 2GB") do |size|
+  opts.on("--tail SIZE", "Download only 'tail' part of the file, e.g. 4KB, 1024B, 2GB") do |size|
     options[:tail] = S3CP.size_in_bytes(size)
   end
 
