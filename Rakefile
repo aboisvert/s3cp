@@ -31,7 +31,7 @@ end
 
 task :upload => [:gem] do
   cmd =
-  sh "s3cp #{GEM} com-bizo-repository:bizo.com/s3cp-ruby/#{GEM} "
+  sh "s3cp #{GEM} com-bizo-repository-v2:bizo.com/s3cp-ruby/#{GEM} "
 end
 
 task :push => [:gem] do
