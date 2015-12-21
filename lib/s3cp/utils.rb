@@ -16,7 +16,7 @@
 # the License.
 
 require 'rubygems'
-require 'extensions/kernel' if RUBY_VERSION =~ /1.8/
+require 'extensions/kernel' if RUBY_VERSION =~ /^1.8/
 require 'aws/s3'
 require 'optparse'
 require 'date'
