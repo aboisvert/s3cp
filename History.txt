@@ -1,3 +1,6 @@
+=== 1.1.41 (2017-11-30)
+
+* Fixed:  s3rm now incrementally deletes objects (per new --batch size parameter; defaults to 10,000)
 
 === 1.1.40 (2015-12-21)
 
