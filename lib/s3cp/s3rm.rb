@@ -25,6 +25,7 @@ options[:exclude_regex] = nil
 options[:test]   = false
 options[:silent] = false
 options[:fail_if_not_exist] = false
+options[:batch_size] = 10000
 
 op = OptionParser.new do |opts|
   opts.banner = "s3rm [path]"
@@ -52,6 +53,10 @@ op = OptionParser.new do |opts|
 
   opts.on("--silent", "Do not display keys as they are deleted.") do
     options[:silent] = true
+  end
+
+  opts.on("--batch", "Delete batch size.") do |batch|
+    options[:batch_size] = batch.to_i
   end
 
   opts.on("--verbose", "Verbose mode") do
@@ -122,6 +127,14 @@ S3CP.standard_exception_handling(options) do
       if matching
         matching_keys << entry.key
         puts key unless options[:silent] || options[:verbose]
+      end
+
+      if matching_keys.size > options[:batch_size]
+        if options[:verbose]
+          puts "Deleting batch..."
+        end
+        @s3.buckets[@bucket].objects.delete(matching_keys) unless options[:test]
+        matching_keys = []
       end
     end
 
