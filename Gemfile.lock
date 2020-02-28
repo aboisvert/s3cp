@@ -24,7 +24,7 @@ GEM
     nokogiri (1.8.4)
       mini_portile2 (~> 2.3.0)
     progressbar (0.10.0)
-    rake (0.8.7)
+    rake (13.0.1)
     rspec (2.5.0)
       rspec-core (~> 2.5.0)
       rspec-expectations (~> 2.5.0)
@@ -38,7 +38,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  rake (~> 0.8.7)
+  rake (~> 13.0.1)
   rspec (~> 2.5.0)
   s3cp!
 
